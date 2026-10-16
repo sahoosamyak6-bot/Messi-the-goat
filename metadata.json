@@ -1,0 +1,6 @@
+{
+  "name": "Lionel Messi: The Definitive Legacy & Interactive Archive",
+  "description": "An immersive editorial tribute and interactive chronicle of Lionel Andrés Messi — 8-time Ballon d'Or winner, World Cup champion, and football's greatest ever.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
