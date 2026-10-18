@@ -96,3 +96,41 @@ export interface QuizQuestion {
   explanation: string;
   category: 'records' | 'world_cup' | 'barcelona' | 'early_life';
 }
+
+export interface TimelineYearItem {
+  year: number;
+  seasonLabel: string;
+  club: 'FC Barcelona' | 'Paris Saint-Germain' | 'Inter Miami CF';
+  eraBadge: string;
+  milestoneTitle: string;
+  shortSummary: string;
+  detailedBio: string;
+  stats: {
+    apps: number;
+    goals: number;
+    assists: number;
+    ga: number;
+    gpg: string;
+    apg: string;
+  };
+  trophiesWon: string[];
+  definingMoment: string;
+  quote?: {
+    text: string;
+    speaker: string;
+  };
+  isMajorPeak: boolean;
+}
+
+export interface GoalPollItem {
+  id: string;
+  title: string;
+  year: number;
+  match: string;
+  competition: string;
+  description: string;
+  distance: string;
+  initialVotes: number;
+  badge: string;
+}
+

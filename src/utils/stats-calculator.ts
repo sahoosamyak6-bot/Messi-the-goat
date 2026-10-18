@@ -100,3 +100,33 @@ export function getGoalZone(x: number, y: number): string {
   }
   return 'Midfield Launchpad';
 }
+
+export function calculatePollPercentages(votes: Record<string, number>): Record<string, number> {
+  const totalVotes = Object.values(votes).reduce((sum, v) => sum + v, 0);
+  const result: Record<string, number> = {};
+  if (totalVotes === 0) {
+    Object.keys(votes).forEach((id) => {
+      result[id] = 0;
+    });
+    return result;
+  }
+
+  for (const [id, count] of Object.entries(votes)) {
+    result[id] = Number(((count / totalVotes) * 100).toFixed(1));
+  }
+  return result;
+}
+
+export function recordPollVote(
+  currentVotes: Record<string, number>,
+  goalId: string,
+  previousVoteId?: string | null
+): Record<string, number> {
+  const updated = { ...currentVotes };
+  if (previousVoteId && previousVoteId !== goalId && updated[previousVoteId] !== undefined) {
+    updated[previousVoteId] = Math.max(0, updated[previousVoteId] - 1);
+  }
+  updated[goalId] = (updated[goalId] || 0) + 1;
+  return updated;
+}
+

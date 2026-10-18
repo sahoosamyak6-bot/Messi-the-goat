@@ -8,12 +8,27 @@ import {
 import { BarChart3, Search, ArrowUpDown, Shield, Globe, Award, Filter } from 'lucide-react';
 import { soundFx } from '../utils/audio';
 
-export const CareerStats: React.FC = () => {
+interface CareerStatsProps {
+  externalSeasonQuery?: string;
+  onClearExternalSeason?: () => void;
+}
+
+export const CareerStats: React.FC<CareerStatsProps> = ({
+  externalSeasonQuery,
+  onClearExternalSeason,
+}) => {
   const [activeTab, setActiveTab] = useState<'seasons' | 'clubs' | 'competitions'>('seasons');
   const [clubFilter, setClubFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [sortField, setSortField] = useState<'season' | 'totalGoals' | 'totalAssists' | 'totalApps'>('season');
   const [sortAsc, setSortAsc] = useState<boolean>(false);
+
+  React.useEffect(() => {
+    if (externalSeasonQuery) {
+      setSearchQuery(externalSeasonQuery);
+      setActiveTab('seasons');
+    }
+  }, [externalSeasonQuery]);
 
   // Filtered & sorted seasons
   const filteredSeasons = useMemo(() => {
@@ -190,8 +205,21 @@ export const CareerStats: React.FC = () => {
                   placeholder="Search season, trophy, or club..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-[#080d16] text-xs text-slate-200 placeholder-slate-500 rounded pl-9 pr-3 py-1.5 border border-slate-800 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-400"
+                  className="w-full bg-[#080d16] text-xs text-slate-200 placeholder-slate-500 rounded pl-9 pr-8 py-1.5 border border-slate-800 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-400"
                 />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery('');
+                      if (onClearExternalSeason) onClearExternalSeason();
+                    }}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs font-mono"
+                    aria-label="Clear search"
+                  >
+                    ✕
+                  </button>
+                )}
               </div>
             </div>
 

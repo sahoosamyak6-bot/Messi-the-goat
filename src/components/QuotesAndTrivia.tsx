@@ -4,6 +4,7 @@ import { calculateQuizGrade } from '../utils/stats-calculator';
 import { Quote, Sparkles, CheckCircle2, XCircle, RotateCcw, Trophy, Award, MessageSquare } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { soundFx } from '../utils/audio';
+import { GoalPoll } from './GoalPoll';
 
 export const QuotesAndTrivia: React.FC = () => {
   // Quotes filter
@@ -147,7 +148,10 @@ export const QuotesAndTrivia: React.FC = () => {
           </div>
         </div>
 
-        {/* SECTION 2: INTERACTIVE GOAT TRIVIA QUIZ */}
+        {/* SECTION 2: LIVE FAN GOAL POLL */}
+        <GoalPoll />
+
+        {/* SECTION 3: INTERACTIVE GOAT TRIVIA QUIZ */}
         <div className="pt-10 border-t border-slate-800/80">
           <div className="max-w-3xl mb-8">
             <div className="flex items-center gap-2 text-xs font-mono tracking-widest text-sky-400 uppercase mb-3">

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Trophy, Award, Target, Compass, ChevronDown, Flame, Play } from 'lucide-react';
+import { Trophy, Award, Target, Compass, ChevronDown, Flame, Play, Calendar } from 'lucide-react';
 import { soundFx } from '../utils/audio';
 
 interface HeroProps {
@@ -91,6 +91,18 @@ export const Hero: React.FC<HeroProps> = ({ onNavigate, onOpenHighlightModal }) 
             className="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-100 font-semibold text-sm tracking-wide rounded border border-slate-700 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
           >
             Explore Career Statistics
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              soundFx.playClickTone();
+              onNavigate('career-timeline');
+            }}
+            className="px-6 py-3 bg-slate-900 hover:bg-slate-800 text-amber-300 font-semibold text-sm tracking-wide rounded border border-amber-400/30 hover:border-amber-400 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 flex items-center gap-2"
+          >
+            <Calendar className="w-4 h-4 text-amber-400" />
+            <span>Interactive Timeline</span>
           </button>
 
           <button

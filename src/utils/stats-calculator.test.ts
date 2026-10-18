@@ -8,6 +8,8 @@ import {
   getTotalSilverwareCount,
   calculateQuizGrade,
   getGoalZone,
+  calculatePollPercentages,
+  recordPollVote,
 } from './stats-calculator.ts';
 import type { CareerYearStat, TrophyItem } from '../types/messi.ts';
 
@@ -119,3 +121,19 @@ test('getGoalZone classifies coordinates accurately', () => {
   const cutInZone = getGoalZone(70, 75);
   assert.equal(cutInZone, 'Right Half-Space Cut-In Zone');
 });
+
+test('calculatePollPercentages computes exact percentage distribution', () => {
+  const votes = { g1: 50, g2: 30, g3: 20 };
+  const percentages = calculatePollPercentages(votes);
+  assert.equal(percentages.g1, 50);
+  assert.equal(percentages.g2, 30);
+  assert.equal(percentages.g3, 20);
+});
+
+test('recordPollVote updates counts and switches previous vote', () => {
+  const initial = { g1: 10, g2: 5 };
+  const updated = recordPollVote(initial, 'g2', 'g1');
+  assert.equal(updated.g1, 9);
+  assert.equal(updated.g2, 6);
+});
+
