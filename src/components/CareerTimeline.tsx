@@ -72,7 +72,7 @@ export const CareerTimeline: React.FC<CareerTimelineProps> = ({
   }, [selectedYear]);
 
   return (
-    <section id="career-timeline" className="py-20 bg-[#060911] border-b border-slate-800/80 relative">
+    <section id="career-timeline" className="scroll-mt-24 py-20 bg-[#060911] border-b border-slate-800/80 relative">
       {/* Background radial glow */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/2 left-1/3 -translate-y-1/2 w-[500px] h-[350px] bg-sky-950/20 rounded-full blur-3xl" />

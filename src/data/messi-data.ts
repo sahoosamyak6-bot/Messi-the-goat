@@ -2033,3 +2033,121 @@ export const TIMELINE_YEAR_ITEMS = [
   },
 ];
 
+export const ACHIEVEMENT_TIMELINE_ITEMS = [
+  {
+    id: 'ach-argentina-top-scorer',
+    order: 1,
+    year: 2016,
+    dateStr: 'June 21, 2016',
+    category: 'international' as const,
+    title: 'Argentina All-Time Top Scorer',
+    summary: 'Became the all-time top scorer for Argentina with a legendary international haul, surpassing Gabriel Batistuta.',
+    details: 'In the 2016 Copa América Centenario semi-final in Houston, Messi struck a sublime 25-yard curled free-kick past USA goalkeeper Brad Guzan to reach 55 international goals, overtaking Gabriel Batistuta (54). He has since elevated this record to 112+ international goals—the highest tally in South American football history.',
+    badge: 'Historic Milestone',
+    metrics: {
+      label: 'International Record',
+      value: '112+ International Goals',
+    },
+    quote: {
+      text: 'To be Argentina’s all-time top scorer is special, but winning titles for my country was always the dream.',
+      author: 'Lionel Andrés Messi',
+    },
+  },
+  {
+    id: 'ach-world-cup-2022',
+    order: 2,
+    year: 2022,
+    dateStr: 'December 18, 2022',
+    category: 'world_cup' as const,
+    title: 'FIFA World Cup Champion & Golden Ball',
+    summary: 'Won the 2022 FIFA World Cup in Qatar and claimed the Golden Ball, scoring in every single knockout round.',
+    details: 'In the greatest final ever contested at Lusail Iconic Stadium, Messi scored twice against France (3-3, 4-2 on penalties) to complete football. Finishing with 7 goals and 3 assists, he became the only player in World Cup history to win two Golden Balls (2014 & 2022) and score in the Round of 16, Quarter-final, Semi-final, and Final.',
+    badge: 'World Cup Immortality',
+    metrics: {
+      label: 'Tournament Accolades',
+      value: '7 Goals · 3 Assists · Golden Ball',
+    },
+    quote: {
+      text: 'Lionel Messi has shaken hands with paradise. The little boy from Rosario has reached the highest heavens of football.',
+      author: 'Peter Drury',
+    },
+  },
+  {
+    id: 'ach-leagues-cup-2023',
+    order: 3,
+    year: 2023,
+    dateStr: 'August 19, 2023',
+    category: 'club_milestone' as const,
+    title: 'Inter Miami Leagues Cup Triumph',
+    summary: 'Lifted the 2023 Leagues Cup with Inter Miami and inspired a transformative new era for North American soccer.',
+    details: 'Arriving in South Florida in July 2023, Messi orchestrated an undefeated campaign for the last-placed MLS franchise. He scored in every single match—starting with his 94th-minute debut free-kick winner vs Cruz Azul—bagging 10 goals in 7 games to capture the first official silverware in Inter Miami history.',
+    badge: 'American Symphony',
+    metrics: {
+      label: 'Golden Boot & MVP',
+      value: '10 Goals in 7 Matches',
+    },
+    quote: {
+      text: 'To bring the greatest player in history to Miami and watch him win our first trophy in 30 days was pure sporting cinema.',
+      author: 'David Beckham',
+    },
+  },
+  {
+    id: 'ach-eighth-ballon-dor',
+    order: 4,
+    year: 2023,
+    dateStr: 'October 30, 2023',
+    category: 'individual' as const,
+    title: 'Eighth Ballon d’Or (All-Time Record)',
+    summary: 'Captured his eighth Ballon d’Or in Paris, extending his legendary world record across three decades.',
+    details: 'Honored at the Théâtre du Châtelet in Paris, Messi hoisted the Ballon d’Or for an eighth time (2009, 2010, 2011, 2012, 2015, 2019, 2021, and 2023). He became the only player to win the award while playing across three different decades and the first active MLS player to win football’s supreme honor.',
+    badge: 'Unbroken World Record',
+    metrics: {
+      label: 'Ballon d’Or Collection',
+      value: '8 Golden Balls (2009–2023)',
+    },
+    quote: {
+      text: 'This award is for the entire Argentine group and our people for what we achieved in Qatar.',
+      author: 'Lionel Andrés Messi',
+    },
+  },
+  {
+    id: 'ach-850-goals',
+    order: 5,
+    year: 2024,
+    dateStr: 'April 2024',
+    category: 'world_record' as const,
+    title: '850+ Senior Career Goals Landmark',
+    summary: 'Reached 850+ senior career goals across club and country, achieving the feat faster than any player in history.',
+    details: 'Spanning 672 goals for FC Barcelona, 32 for Paris Saint-Germain, 37+ for Inter Miami, and 112+ for Argentina, Messi breached the 850-goal summit in just 1,065 matches. He achieved this milestone while also producing over 380 official assists—making him the all-time leader in direct goal involvements (1,230+ G/A).',
+    badge: 'Scoring Pinnacle',
+    metrics: {
+      label: 'Goal Involvement',
+      value: '850+ Goals · 380+ Assists',
+    },
+    quote: {
+      text: 'He doesn’t just score the goals; he controls the geometry of the entire pitch.',
+      author: 'Jorge Valdano',
+    },
+  },
+  {
+    id: 'ach-46-trophies',
+    order: 6,
+    year: 2024,
+    dateStr: 'October 2, 2024',
+    category: 'world_record' as const,
+    title: '46 Major Trophies: The Most Decorated in History',
+    summary: 'Won a record-setting 46 major trophies in his illustrious career, surpassing all footballers in the history of the sport.',
+    details: 'With Inter Miami clinching the 2024 MLS Supporters’ Shield with a league-record 74 points, coupled with Argentina’s back-to-back 2024 Copa América crown, Messi reached 46 official trophies. He officially surpassed former teammate Dani Alves (44) to become the single most decorated player in association football history.',
+    badge: 'The Silverware Summit',
+    metrics: {
+      label: 'Official Silverware',
+      value: '46 Trophies (World Record)',
+    },
+    quote: {
+      text: '46 trophies is an unbelievable number. Leo has won every single tournament he has competed in.',
+      author: 'Lionel Scaloni',
+    },
+  },
+];
+
+

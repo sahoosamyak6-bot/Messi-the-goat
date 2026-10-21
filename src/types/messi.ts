@@ -134,3 +134,24 @@ export interface GoalPollItem {
   badge: string;
 }
 
+export interface AchievementItem {
+  id: string;
+  order: number;
+  year: number;
+  dateStr: string;
+  category: 'international' | 'world_cup' | 'club_milestone' | 'individual' | 'world_record';
+  title: string;
+  summary: string;
+  details: string;
+  badge: string;
+  metrics: {
+    label: string;
+    value: string;
+  };
+  quote?: {
+    text: string;
+    author: string;
+  };
+}
+
+

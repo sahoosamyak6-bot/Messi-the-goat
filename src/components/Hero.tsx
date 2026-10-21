@@ -97,12 +97,24 @@ export const Hero: React.FC<HeroProps> = ({ onNavigate, onOpenHighlightModal }) 
             type="button"
             onClick={() => {
               soundFx.playClickTone();
+              onNavigate('achievement-timeline');
+            }}
+            className="px-5 py-3 bg-gradient-to-r from-amber-500/20 to-amber-600/10 hover:from-amber-500/30 hover:to-amber-600/20 text-amber-300 font-semibold text-sm tracking-wide rounded border border-amber-400/40 hover:border-amber-400 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 flex items-center gap-2"
+          >
+            <Trophy className="w-4 h-4 text-amber-400" />
+            <span>Achievement Timeline</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              soundFx.playClickTone();
               onNavigate('career-timeline');
             }}
-            className="px-6 py-3 bg-slate-900 hover:bg-slate-800 text-amber-300 font-semibold text-sm tracking-wide rounded border border-amber-400/30 hover:border-amber-400 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 flex items-center gap-2"
+            className="px-5 py-3 bg-slate-900 hover:bg-slate-800 text-slate-200 font-semibold text-sm tracking-wide rounded border border-slate-700 hover:border-slate-600 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 flex items-center gap-2"
           >
-            <Calendar className="w-4 h-4 text-amber-400" />
-            <span>Interactive Timeline</span>
+            <Calendar className="w-4 h-4 text-slate-400" />
+            <span>Career Chronology</span>
           </button>
 
           <button

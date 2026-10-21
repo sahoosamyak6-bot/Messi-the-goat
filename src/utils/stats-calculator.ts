@@ -130,3 +130,11 @@ export function recordPollVote(
   return updated;
 }
 
+export function sortAchievementsChronologically<T extends { order: number; year: number }>(items: T[]): T[] {
+  return [...items].sort((a, b) => {
+    if (a.year !== b.year) return a.year - b.year;
+    return a.order - b.order;
+  });
+}
+
+

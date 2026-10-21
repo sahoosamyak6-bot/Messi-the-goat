@@ -21,6 +21,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeSection, onNavigate }) => 
 
   const navItems = [
     { id: 'biography', label: 'Biography' },
+    { id: 'achievement-timeline', label: 'Achievements' },
     { id: 'career-timeline', label: 'Timeline' },
     { id: 'statistics', label: 'Career Statistics' },
     { id: 'gallery', label: 'Iconic Gallery' },

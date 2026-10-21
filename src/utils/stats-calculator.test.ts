@@ -10,6 +10,7 @@ import {
   getGoalZone,
   calculatePollPercentages,
   recordPollVote,
+  sortAchievementsChronologically,
 } from './stats-calculator.ts';
 import type { CareerYearStat, TrophyItem } from '../types/messi.ts';
 
@@ -136,4 +137,19 @@ test('recordPollVote updates counts and switches previous vote', () => {
   assert.equal(updated.g1, 9);
   assert.equal(updated.g2, 6);
 });
+
+test('sortAchievementsChronologically sorts items by year and order', () => {
+  const unsorted = [
+    { id: 'b', order: 2, year: 2023 },
+    { id: 'a', order: 1, year: 2016 },
+    { id: 'c', order: 1, year: 2023 },
+    { id: 'd', order: 1, year: 2024 },
+  ];
+  const sorted = sortAchievementsChronologically(unsorted);
+  assert.equal(sorted[0].id, 'a');
+  assert.equal(sorted[1].id, 'c');
+  assert.equal(sorted[2].id, 'b');
+  assert.equal(sorted[3].id, 'd');
+});
+
 

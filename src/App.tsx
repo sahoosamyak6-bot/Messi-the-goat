@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
+import { AchievementTimeline } from './components/AchievementTimeline';
+import { CareerTimeline } from './components/CareerTimeline';
 import { Biography } from './components/Biography';
 import { CareerStats } from './components/CareerStats';
 import { IconicGallery } from './components/IconicGallery';
@@ -10,33 +12,13 @@ import { QuotesAndTrivia } from './components/QuotesAndTrivia';
 import { Footer } from './components/Footer';
 import { MomentModal } from './components/MomentModal';
 import { IconicMoment } from './data/messi-data';
-
-const achievementNotifications = [
-  'Achievement unlocked: Messi won the 2022 FIFA World Cup and claimed the Golden Ball.',
-  'Achievement unlocked: Messi captured his eighth Ballon d’Or, extending the record.',
-  'Achievement unlocked: Messi became the all-time top scorer for Argentina with a legendary international haul.',
-  'Achievement unlocked: Messi reached 850+ senior career goals across club and country.',
-  'Achievement unlocked: Messi lifted the 2023 Leagues Cup with Inter Miami and inspired a new era.',
-  'Achievement unlocked: Messi won a record-setting 46 major trophies in his illustrious career.',
-];
+import { Trophy } from 'lucide-react';
+import { soundFx } from './utils/audio';
 
 export default function App() {
   const [activeSection, setActiveSection] = useState<string>('hero');
   const [selectedMoment, setSelectedMoment] = useState<IconicMoment | null>(null);
-  const [theme, setTheme] = useState<'ivory' | 'sunrise'>('ivory');
-  const [notification, setNotification] = useState<string>(achievementNotifications[0]);
-
-  useEffect(() => {
-    const intervalId = window.setInterval(() => {
-      setNotification((current) => {
-        const currentIndex = achievementNotifications.indexOf(current);
-        const nextIndex = (currentIndex + 1) % achievementNotifications.length;
-        return achievementNotifications[nextIndex];
-      });
-    }, 60000);
-
-    return () => window.clearInterval(intervalId);
-  }, []);
+  const [syncSeasonQuery, setSyncSeasonQuery] = useState<string | undefined>(undefined);
 
   const handleNavigate = (sectionId: string) => {
     setActiveSection(sectionId);
@@ -46,34 +28,52 @@ export default function App() {
     }
   };
 
+  const handleSyncSeason = (seasonLabel: string) => {
+    setSyncSeasonQuery(seasonLabel);
+  };
+
   return (
     <div
       id="app"
-      className={`min-h-screen flex flex-col font-sans selection:bg-amber-400 selection:text-slate-950 ${
-        theme === 'ivory' ? 'theme-ivory' : 'theme-sunrise'
-      }`}
+      className="min-h-screen flex flex-col font-sans selection:bg-amber-400 selection:text-slate-950 bg-[#070b12] text-slate-100"
     >
-      <div className="fixed right-4 top-24 z-[60] w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-amber-300/70 bg-amber-100/90 text-slate-900 shadow-[0_20px_50px_rgba(15,23,42,0.18)] backdrop-blur-md">
-        <div className="flex items-center gap-2 border-b border-amber-300/80 bg-amber-200/80 px-3 py-2 text-[10px] font-mono uppercase tracking-[0.24em] text-amber-900">
-          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-          Latest achievement
-        </div>
-        <p className="px-3 py-3 text-sm font-medium leading-relaxed text-slate-800">
-          {notification}
-        </p>
+      {/* Floating Quick-Jump Badge replacing the single rotating notification */}
+      <div className="fixed right-4 bottom-6 z-40 hidden sm:block">
+        <button
+          type="button"
+          onClick={() => {
+            soundFx.playClickTone();
+            handleNavigate('achievement-timeline');
+          }}
+          className="group flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-[#0a0f1d]/90 hover:bg-[#0f172a] text-amber-300 border border-amber-400/40 shadow-2xl backdrop-blur-md text-xs font-mono transition-all hover:scale-105 hover:border-amber-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
+          title="Jump to the 6 Crown Achievements Timeline"
+        >
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <Trophy className="w-3.5 h-3.5 text-amber-400 group-hover:rotate-12 transition-transform" />
+          <span className="font-semibold tracking-wide">6 Crown Achievements</span>
+        </button>
       </div>
 
       <Navbar
         activeSection={activeSection}
         onNavigate={handleNavigate}
-        theme={theme}
-        onToggleTheme={() => setTheme((current) => (current === 'ivory' ? 'sunrise' : 'ivory'))}
       />
 
       <main className="flex-1">
         <Hero onNavigate={handleNavigate} />
+        <AchievementTimeline
+          onNavigate={handleNavigate}
+          onSyncSeasonFilter={handleSyncSeason}
+        />
+        <CareerTimeline
+          onNavigateToSection={handleNavigate}
+          onSyncSeasonFilter={handleSyncSeason}
+        />
         <Biography />
-        <CareerStats />
+        <CareerStats
+          externalSeasonQuery={syncSeasonQuery}
+          onClearExternalSeason={() => setSyncSeasonQuery(undefined)}
+        />
         <IconicGallery onSelectMoment={(m) => setSelectedMoment(m)} />
         <PitchVisualizer />
         <TrophyCabinet />
