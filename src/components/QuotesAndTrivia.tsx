@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { LEGEND_QUOTES, TRIVIA_QUESTIONS, LegendQuote, QuizQuestion } from '../data/messi-data';
+import { LEGEND_QUOTES, TRIVIA_QUESTIONS } from '../data/messi-data';
+import { LegendQuote, QuizQuestion } from '../types/messi';
 import { calculateQuizGrade } from '../utils/stats-calculator';
 import { Quote, Sparkles, CheckCircle2, XCircle, RotateCcw, Trophy, Award, MessageSquare } from 'lucide-react';
 import confetti from 'canvas-confetti';

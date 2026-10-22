@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
-import { TROPHIES_DATA, TrophyItem } from '../data/messi-data';
+import { TROPHIES_DATA } from '../data/messi-data';
+import { TrophyItem } from '../types/messi';
 import { Trophy, Award, Search, Sparkles, Star, Calendar, Info } from 'lucide-react';
 import { soundFx } from '../utils/audio';
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ICONIC_GOALS_TACTICAL, IconicGoal } from '../data/messi-data';
+import { ICONIC_GOALS_TACTICAL } from '../data/messi-data';
+import { IconicGoal } from '../types/messi';
 import { Play, Pause, RotateCcw, Volume2, Shield, Activity, Award, Compass } from 'lucide-react';
 import { soundFx } from '../utils/audio';
 
