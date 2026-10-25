@@ -12,8 +12,23 @@ import {
   recordPollVote,
   getLocalPollResults,
   sortAchievementsChronologically,
+  normalizeSeasonSearch,
 } from './stats-calculator.ts';
 import type { CareerYearStat, TrophyItem } from '../types/messi.ts';
+
+test('season search matches timeline slash labels to hyphenated table rows', () => {
+  for (const label of ['2011/12', '2011-12', '2011 – 12', ' 2011 / 12 ', '2011—12']) {
+    assert.equal(normalizeSeasonSearch(label), '2011-12');
+    assert.ok(normalizeSeasonSearch('2011-12').includes(normalizeSeasonSearch(label)));
+  }
+});
+
+test('season search preserves single years, club names, and trophy queries', () => {
+  assert.equal(normalizeSeasonSearch('2022'), '2022');
+  assert.equal(normalizeSeasonSearch(' Paris Saint-Germain '), 'paris saint-germain');
+  assert.equal(normalizeSeasonSearch(' World Cup '), 'world cup');
+  assert.equal(normalizeSeasonSearch('   '), '');
+});
 
 const mockStats: CareerYearStat[] = [
   {

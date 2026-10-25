@@ -1,19 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import {
-  X,
-  Share2,
-  Copy,
-  Check,
-  ExternalLink,
-  Twitter,
-  MessageCircle,
-  Send,
-  Mail,
-  Sparkles,
-  Link2,
-  CheckCheck,
-  Globe,
-} from 'lucide-react';
+import React, { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import { X, Share2, Copy, Check, ExternalLink, Twitter, MessageCircle, Send, Mail, Link2, Globe } from 'lucide-react';
 import {
   getSectionShareMetadata,
   getAllShareableSections,
@@ -21,9 +7,9 @@ import {
   generateSocialPostSnippet,
   generateSocialIntentUrls,
   copyTextToClipboard,
-  SectionShareMetadata,
 } from '../utils/share-helper';
 import { soundFx } from '../utils/audio';
+import './share-modal.css';
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -32,423 +18,252 @@ interface ShareModalProps {
   onNavigateToSection?: (sectionId: string) => void;
 }
 
-export const ShareModal: React.FC<ShareModalProps> = ({
-  isOpen,
-  onClose,
-  currentSectionId,
-  onNavigateToSection,
-}) => {
-  const [selectedSectionId, setSelectedSectionId] = useState<string>(currentSectionId || 'hero');
-  const [snippetStyle, setSnippetStyle] = useState<'detailed' | 'compact' | 'quote'>('detailed');
-  const [copyStatus, setCopyStatus] = useState<'idle' | 'link-copied' | 'snippet-copied'>('idle');
-  const [hasNativeShare, setHasNativeShare] = useState<boolean>(false);
+type SnippetStyle = 'detailed' | 'compact' | 'quote';
+type CopyTarget = 'link' | 'snippet';
+type ShareStatus = { message: string; copied?: CopyTarget; failed?: boolean };
+const sections = getAllShareableSections();
+const snippetStyles: SnippetStyle[] = ['detailed', 'compact', 'quote'];
 
-  // Sync with currentSectionId when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      setSelectedSectionId(currentSectionId || 'hero');
-      setCopyStatus('idle');
-    }
-  }, [isOpen, currentSectionId]);
+export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, currentSectionId, onNavigateToSection }) => {
+  const [selectedSectionId, setSelectedSectionId] = useState(() => getSectionShareMetadata(currentSectionId).sectionId);
+  const [snippetStyle, setSnippetStyle] = useState<SnippetStyle>('detailed');
+  const [status, setStatus] = useState<ShareStatus>({ message: '' });
+  const [busy, setBusy] = useState<CopyTarget | 'share' | null>(null);
+  const [hasNativeShare, setHasNativeShare] = useState(false);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const operationRef = useRef<AbortController | null>(null);
+  const statusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const restoreFocusRef = useRef(true);
+  const id = useId();
 
-  // Check Web Share API capability
-  useEffect(() => {
-    if (typeof window !== 'undefined' && typeof navigator !== 'undefined' && !!navigator.share) {
-      setHasNativeShare(true);
-    }
+  const cancelPending = useCallback(() => {
+    operationRef.current?.abort();
+    operationRef.current = null;
+    if (statusTimerRef.current !== null) clearTimeout(statusTimerRef.current);
+    statusTimerRef.current = null;
   }, []);
 
-  // Handle ESC key to close modal
+  const resetFeedback = useCallback(() => {
+    cancelPending();
+    setBusy(null);
+    setStatus({ message: '' });
+  }, [cancelPending]);
+
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
-        onClose();
-      }
-    };
-    if (isOpen) {
-      window.addEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'hidden';
-    }
+    setHasNativeShare(typeof navigator !== 'undefined' && typeof navigator.share === 'function');
+  }, []);
+
+  // Reset synchronously on an externally changed section, before a late copy result can announce old content.
+  useLayoutEffect(() => {
+    resetFeedback();
+    if (isOpen) setSelectedSectionId(getSectionShareMetadata(currentSectionId).sectionId);
+  }, [isOpen, currentSectionId, resetFeedback]);
+
+  useLayoutEffect(() => {
+    const dialog = dialogRef.current;
+    if (!isOpen || !dialog) return;
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
+    const previousOverflowPriority = document.body.style.getPropertyPriority('overflow');
+    restoreFocusRef.current = true;
+    dialog.showModal();
+    document.body.style.overflow = 'hidden';
+    closeButtonRef.current?.focus({ preventScroll: true });
+
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'unset';
+      cancelPending();
+      dialog.close();
+      document.body.style.setProperty('overflow', previousOverflow, previousOverflowPriority);
+      if (restoreFocusRef.current && previousFocus?.isConnected) previousFocus.focus({ preventScroll: true });
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, cancelPending]);
 
-  if (!isOpen) return null;
-
-  const sections = getAllShareableSections();
-  const currentMeta: SectionShareMetadata = getSectionShareMetadata(selectedSectionId);
-  const directUrl = buildSectionDirectUrl(selectedSectionId);
-  const postSnippet = generateSocialPostSnippet({
-    sectionId: selectedSectionId,
-    style: snippetStyle,
-  });
-  const intentUrls = generateSocialIntentUrls({
-    sectionId: selectedSectionId,
-    style: snippetStyle,
-  });
-
-  const handleCopyLink = async () => {
-    soundFx.playCelebrationChime();
-    await copyTextToClipboard(directUrl);
-    setCopyStatus('link-copied');
-    setTimeout(() => setCopyStatus('idle'), 3500);
+  const close = () => {
+    cancelPending();
+    dialogRef.current?.close();
+    onClose();
   };
 
-  const handleCopySnippet = async () => {
+  const containKeyboardFocus = (event: React.KeyboardEvent<HTMLDialogElement>) => {
+    if (event.key !== 'Tab') return;
+    const focusable = Array.from(event.currentTarget.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    )).filter(element => element.tabIndex >= 0 && element.getClientRects().length > 0);
+    const first = focusable[0];
+    const last = focusable.at(-1);
+    if (!first || !last) {
+      event.preventDefault();
+      event.currentTarget.focus();
+    } else if (event.shiftKey && (document.activeElement === first || document.activeElement === event.currentTarget)) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && (document.activeElement === last || document.activeElement === event.currentTarget)) {
+      event.preventDefault();
+      first.focus();
+    }
+  };
+
+  if (!isOpen) return null;
+  const currentMeta = getSectionShareMetadata(selectedSectionId);
+  const directUrl = buildSectionDirectUrl(currentMeta.sectionId);
+  const postSnippet = generateSocialPostSnippet({ sectionId: currentMeta.sectionId, style: snippetStyle });
+  const intentUrls = generateSocialIntentUrls({ sectionId: currentMeta.sectionId, style: snippetStyle });
+
+  const handleCopy = async (target: CopyTarget) => {
+    if (busy || !dialogRef.current?.open) return;
+    cancelPending();
+    const operation = new AbortController();
+    operationRef.current = operation;
+    setBusy(target);
+    setStatus({ message: '' });
+    const copied = await copyTextToClipboard(target === 'link' ? directUrl : postSnippet, {
+      signal: operation.signal,
+      container: dialogRef.current,
+    });
+    if (operation.signal.aborted || operationRef.current !== operation) return;
+    setBusy(null);
+    if (!copied) {
+      setStatus({ message: `Could not copy the ${target === 'link' ? 'link' : 'snippet'}. Select the text and copy it manually.`, failed: true });
+      return;
+    }
     soundFx.playCelebrationChime();
-    await copyTextToClipboard(postSnippet);
-    setCopyStatus('snippet-copied');
-    setTimeout(() => setCopyStatus('idle'), 3500);
+    setStatus({ message: `${target === 'link' ? 'Section link' : 'Post snippet'} copied.`, copied: target });
+    statusTimerRef.current = setTimeout(() => {
+      if (!operation.signal.aborted && operationRef.current === operation) setStatus({ message: '' });
+      statusTimerRef.current = null;
+    }, 3500);
   };
 
   const handleNativeShare = async () => {
-    if (navigator?.share) {
-      try {
-        soundFx.playClickTone();
-        await navigator.share({
-          title: currentMeta.previewTitle,
-          text: currentMeta.description,
-          url: directUrl,
-        });
-      } catch {
-        // User cancelled or share dismissed
+    if (busy || !dialogRef.current?.open || typeof navigator.share !== 'function') return;
+    cancelPending();
+    const operation = new AbortController();
+    operationRef.current = operation;
+    setBusy('share');
+    setStatus({ message: '' });
+    try {
+      await navigator.share({ title: currentMeta.previewTitle, text: currentMeta.description, url: directUrl });
+    } catch (error) {
+      if (!operation.signal.aborted && operationRef.current === operation && !(error instanceof DOMException && error.name === 'AbortError')) {
+        setStatus({ message: 'Device sharing is unavailable. You can copy the section link instead.', failed: true });
       }
+      // A dismissed share sheet must not trigger an unexpected clipboard write.
+    } finally {
+      if (!operation.signal.aborted && operationRef.current === operation) setBusy(null);
     }
   };
 
-  const handleSectionChange = (sectionId: string) => {
-    soundFx.playClickTone();
-    setSelectedSectionId(sectionId);
-    setCopyStatus('idle');
-  };
-
-  const handleNavigateAndClose = (sectionId: string) => {
-    if (onNavigateToSection) {
-      onNavigateToSection(sectionId);
-      onClose();
-    }
-  };
+  const intentLinks = [
+    { label: 'Post to X', href: intentUrls.twitter, Icon: Twitter },
+    { label: 'WhatsApp', href: intentUrls.whatsapp, Icon: MessageCircle },
+    { label: 'Telegram', href: intentUrls.telegram, Icon: Send },
+    { label: 'Email', href: intentUrls.email, Icon: Mail },
+  ];
 
   return (
-    <div
-      role="dialog"
+    <dialog
+      ref={dialogRef}
+      tabIndex={-1}
       aria-modal="true"
-      aria-labelledby="share-modal-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200"
+      aria-labelledby={`${id}-title`}
+      aria-describedby={`${id}-description`}
+      className="share-dialog"
+      onKeyDown={containKeyboardFocus}
+      onCancel={event => { event.preventDefault(); close(); }}
+      onClick={event => { if (event.target === event.currentTarget) close(); }}
     >
-      {/* Click Outside Backdrop */}
-      <div
-        className="fixed inset-0 cursor-default"
-        onClick={() => {
-          soundFx.playClickTone();
-          onClose();
-        }}
-        aria-hidden="true"
-      />
-
-      {/* Modal Dialog Card */}
-      <div className="relative w-full max-w-2xl max-h-[92vh] overflow-y-auto bg-[#0a0f1d] border border-amber-500/30 rounded-2xl shadow-2xl shadow-amber-500/10 flex flex-col z-10 text-slate-100">
-        {/* Modal Header */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-800/80 bg-[#0d1426]/70">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-slate-950 shadow-md">
-              <Share2 className="w-4 h-4 text-slate-950" />
-            </div>
-            <div>
-              <h2 id="share-modal-title" className="text-base sm:text-lg font-bold font-serif-prestige text-white tracking-wide">
-                Share Archive Section
-              </h2>
-              <p className="text-[11px] sm:text-xs text-slate-400">
-                Generate preview titles, social post snippets, and direct section deep-links
-              </p>
-            </div>
+      <div className="share-card">
+        <header className="share-header">
+          <span className="share-header-icon"><Share2 size={20} aria-hidden="true" /></span>
+          <div>
+            <p className="share-eyebrow">Pass the story on</p>
+            <h2 id={`${id}-title`}>Share the archive.</h2>
+            <p id={`${id}-description`} className="share-intro">Choose a section, copy its link, or prepare a post.</p>
           </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              soundFx.playClickTone();
-              onClose();
-            }}
-            aria-label="Close share dialog"
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
-          >
-            <X className="w-5 h-5" />
+          <button ref={closeButtonRef} type="button" onClick={close} aria-label="Close share dialog" className="share-close">
+            <X size={20} aria-hidden="true" />
           </button>
-        </div>
+        </header>
 
-        {/* Section Picker Chips */}
-        <div className="px-5 pt-3 pb-1">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[11px] font-mono font-medium text-slate-400 uppercase tracking-wider">
-              Select Chronicle Section
-            </span>
-            <span className="text-[11px] font-mono text-amber-400/90">
-              Active: {currentMeta.sectionLabel}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 scrollbar-thin">
-            {sections.map((section) => {
-              const isSelected = section.sectionId === selectedSectionId;
-              return (
+        <div className="share-content">
+          <fieldset className="share-picker">
+            <legend className="share-label">Choose a section</legend>
+            <div className="share-chips">
+              {sections.map(section => (
                 <button
                   key={section.sectionId}
                   type="button"
-                  onClick={() => handleSectionChange(section.sectionId)}
-                  className={`px-2.5 py-1 text-xs font-medium rounded-full whitespace-nowrap transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 ${
-                    isSelected
-                      ? 'bg-amber-400 text-slate-950 font-bold shadow-md shadow-amber-400/20'
-                      : 'bg-slate-900/90 text-slate-300 hover:text-white hover:bg-slate-800 border border-slate-800'
-                  }`}
+                  aria-pressed={section.sectionId === currentMeta.sectionId}
+                  onClick={() => { resetFeedback(); setSelectedSectionId(section.sectionId); }}
                 >
                   {section.sectionLabel}
                 </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Rich Preview Card */}
-        <div className="px-5 py-2">
-          <div className="rounded-xl border border-slate-700/80 bg-gradient-to-b from-[#0e172c] to-[#090d18] p-3.5 sm:p-4 shadow-lg relative overflow-hidden group">
-            {/* Ambient decorative aura */}
-            <div className="absolute top-0 right-0 w-44 h-44 bg-amber-400/5 rounded-full blur-2xl pointer-events-none" />
-
-            <div className="flex items-center justify-between gap-2 text-[11px] font-mono text-sky-400/90 mb-1.5">
-              <span className="flex items-center gap-1.5">
-                <Globe className="w-3.5 h-3.5 text-sky-400" />
-                <span>The Lionel Messi Chronicle</span>
-                <span className="text-slate-600">·</span>
-                <span className="text-amber-300 font-semibold">{currentMeta.badge}</span>
-              </span>
-              <span className="hidden sm:inline-block px-2 py-0.5 rounded bg-slate-800/80 text-[10px] text-slate-400 border border-slate-700/60 font-mono">
-                #{selectedSectionId}
-              </span>
+              ))}
             </div>
+          </fieldset>
 
-            <h3 className="text-sm sm:text-base font-bold font-serif-prestige text-white leading-snug tracking-tight mb-1.5">
-              {currentMeta.previewTitle}
-            </h3>
+          <section className="share-preview" aria-label="Section preview">
+            <p className="share-preview-badge"><Globe size={13} aria-hidden="true" /> {currentMeta.badge}</p>
+            <h3>{currentMeta.previewTitle}</h3>
+            <p>{currentMeta.description}</p>
+            <p className="share-highlight">{currentMeta.highlightStat}</p>
+            <p className="share-tags">{currentMeta.hashtags.map(tag => <span key={tag}>#{tag}</span>)}</p>
+          </section>
 
-            <p className="text-xs text-slate-300 leading-relaxed font-light mb-2.5">
-              {currentMeta.description}
-            </p>
+          <div>
+            <label htmlFor={`${id}-url`} className="share-label">Direct section link</label>
+            <div className="share-link-row">
+              <div className="share-link-input"><Link2 size={16} aria-hidden="true" /><input id={`${id}-url`} readOnly value={directUrl} onFocus={event => event.currentTarget.select()} /></div>
+              <button type="button" className="share-button share-primary" disabled={busy !== null} onClick={() => void handleCopy('link')}>
+                {status.copied === 'link' ? <Check size={15} aria-hidden="true" /> : <Copy size={15} aria-hidden="true" />}
+                {busy === 'link' ? 'Copying…' : status.copied === 'link' ? 'Copied!' : 'Copy link'}
+              </button>
+            </div>
+          </div>
 
-            <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-800/70">
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-amber-400/10 border border-amber-400/30 text-amber-300 text-xs font-medium">
-                <Sparkles className="w-3 h-3 text-amber-400" />
-                {currentMeta.highlightStat}
-              </span>
-
-              <div className="flex flex-wrap gap-1 text-[11px] font-mono text-slate-400">
-                {currentMeta.hashtags.map((tag) => (
-                  <span key={tag} className="text-sky-300/80">#{tag}</span>
-                ))}
+          <div>
+            <div className="share-snippet-heading">
+              <label htmlFor={`${id}-snippet`} className="share-label">Post snippet</label>
+              <div className="share-styles" role="group" aria-label="Post snippet style">
+                {snippetStyles.map(style => <button key={style} type="button" aria-pressed={snippetStyle === style} onClick={() => { resetFeedback(); setSnippetStyle(style); }}>{style}</button>)}
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* Copy Direct Deep-Link Section */}
-        <div className="px-5 py-2">
-          <label className="block text-[11px] font-mono font-medium text-slate-400 uppercase tracking-wider mb-1">
-            Direct Section URL
-          </label>
-          <div className="flex items-center gap-2">
-            <div className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-900/90 border border-slate-700/80 text-xs font-mono text-slate-200 overflow-hidden">
-              <Link2 className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-              <span className="truncate select-all">{directUrl}</span>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleCopyLink}
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold tracking-wide transition-all shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 ${
-                copyStatus === 'link-copied'
-                  ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
-                  : 'bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold shadow-md shadow-amber-400/20'
-              }`}
-            >
-              {copyStatus === 'link-copied' ? (
-                <>
-                  <Check className="w-3.5 h-3.5" />
-                  <span>Copied!</span>
-                </>
-              ) : (
-                <>
-                  <Copy className="w-3.5 h-3.5" />
-                  <span>Copy Link</span>
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-
-        {/* Social Media Post Snippet Section */}
-        <div className="px-5 py-2">
-          <div className="flex items-center justify-between mb-1">
-            <label className="text-[11px] font-mono font-medium text-slate-400 uppercase tracking-wider">
-              Social Media Post Snippet
-            </label>
-            <div className="flex items-center gap-1 bg-slate-900 p-0.5 rounded-lg border border-slate-800">
-              <button
-                type="button"
-                onClick={() => setSnippetStyle('detailed')}
-                className={`px-2 py-0.5 text-[10px] rounded transition-colors ${
-                  snippetStyle === 'detailed'
-                    ? 'bg-amber-400 text-slate-950 font-bold'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                Detailed
-              </button>
-              <button
-                type="button"
-                onClick={() => setSnippetStyle('compact')}
-                className={`px-2 py-0.5 text-[10px] rounded transition-colors ${
-                  snippetStyle === 'compact'
-                    ? 'bg-amber-400 text-slate-950 font-bold'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                Compact
-              </button>
-              <button
-                type="button"
-                onClick={() => setSnippetStyle('quote')}
-                className={`px-2 py-0.5 text-[10px] rounded transition-colors ${
-                  snippetStyle === 'quote'
-                    ? 'bg-amber-400 text-slate-950 font-bold'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                Quote
+            <textarea id={`${id}-snippet`} readOnly rows={5} value={postSnippet} className="share-snippet" />
+            <div className="share-snippet-actions">
+              <p>Preview text is a suggested post, not a live social preview.</p>
+              <button type="button" className="share-button share-secondary" disabled={busy !== null} onClick={() => void handleCopy('snippet')}>
+                {status.copied === 'snippet' ? <Check size={15} aria-hidden="true" /> : <Copy size={15} aria-hidden="true" />}
+                {busy === 'snippet' ? 'Copying…' : status.copied === 'snippet' ? 'Copied!' : 'Copy snippet'}
               </button>
             </div>
           </div>
 
-          <div className="relative">
-            <textarea
-              readOnly
-              rows={2}
-              value={postSnippet}
-              className="w-full px-3 py-1.5 rounded-lg bg-slate-900/90 border border-slate-700/80 text-xs font-mono text-slate-200 leading-relaxed resize-none focus:outline-none focus:border-amber-400"
-            />
-            <button
-              type="button"
-              onClick={handleCopySnippet}
-              className={`absolute top-2 right-2 flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-semibold transition-all ${
-                copyStatus === 'snippet-copied'
-                  ? 'bg-emerald-500 text-slate-950'
-                  : 'bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-400/30'
-              }`}
-            >
-              {copyStatus === 'snippet-copied' ? (
-                <>
-                  <CheckCheck className="w-3.5 h-3.5" />
-                  <span>Snippet Copied!</span>
-                </>
-              ) : (
-                <>
-                  <Copy className="w-3.5 h-3.5" />
-                  <span>Copy Snippet</span>
-                </>
-              )}
-            </button>
-          </div>
+          <p role="status" aria-live="polite" aria-atomic="true" className={`share-status${status.failed ? ' is-error' : ''}`}>{status.message}</p>
         </div>
 
-        {/* 1-Click Social Broadcast Actions */}
-        <div className="px-5 py-3 border-t border-slate-800/80 bg-[#080d1a] mt-1">
-          <div className="text-xs font-mono text-slate-400 uppercase tracking-wider mb-3">
-            Quick Broadcast Intents
+        <footer className="share-footer">
+          <p className="share-label">Open a share composer</p>
+          <p className="share-footer-note">These open another app or website. Nothing is posted automatically.</p>
+          <div className="share-intents">
+            {intentLinks.map(({ label, href, Icon }) => (
+              <a key={label} href={href} target={label === 'Email' ? undefined : '_blank'} rel="noopener noreferrer">
+                <Icon size={15} aria-hidden="true" /><span>{label}</span><ExternalLink size={12} aria-hidden="true" />
+                {label !== 'Email' && <span className="sr-only"> (opens in a new tab)</span>}
+              </a>
+            ))}
           </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-            {/* Twitter / X */}
-            <a
-              href={intentUrls.twitter}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => soundFx.playClickTone()}
-              className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-200 hover:text-white transition-all text-xs font-medium group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
-            >
-              <Twitter className="w-3.5 h-3.5 text-sky-400 group-hover:scale-110 transition-transform" />
-              <span>Post to X</span>
-              <ExternalLink className="w-3 h-3 text-slate-500" />
-            </a>
-
-            {/* WhatsApp */}
-            <a
-              href={intentUrls.whatsapp}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => soundFx.playClickTone()}
-              className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-200 hover:text-white transition-all text-xs font-medium group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
-            >
-              <MessageCircle className="w-3.5 h-3.5 text-emerald-400 group-hover:scale-110 transition-transform" />
-              <span>WhatsApp</span>
-              <ExternalLink className="w-3 h-3 text-slate-500" />
-            </a>
-
-            {/* Telegram */}
-            <a
-              href={intentUrls.telegram}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => soundFx.playClickTone()}
-              className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-200 hover:text-white transition-all text-xs font-medium group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
-            >
-              <Send className="w-3.5 h-3.5 text-sky-300 group-hover:scale-110 transition-transform" />
-              <span>Telegram</span>
-              <ExternalLink className="w-3 h-3 text-slate-500" />
-            </a>
-
-            {/* Email */}
-            <a
-              href={intentUrls.email}
-              onClick={() => soundFx.playClickTone()}
-              className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-200 hover:text-white transition-all text-xs font-medium group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
-            >
-              <Mail className="w-3.5 h-3.5 text-amber-400 group-hover:scale-110 transition-transform" />
-              <span>Email</span>
-              <ExternalLink className="w-3 h-3 text-slate-500" />
-            </a>
-          </div>
-
-          {/* Native System Share Sheet (if supported) */}
-          {hasNativeShare && (
-            <div className="mt-3">
-              <button
-                type="button"
-                onClick={handleNativeShare}
-                className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-lg bg-gradient-to-r from-amber-500/20 via-sky-500/20 to-amber-500/20 border border-amber-400/40 text-amber-300 hover:text-amber-200 text-xs font-semibold tracking-wide transition-all shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
-              >
-                <Share2 className="w-4 h-4 text-amber-400" />
-                <span>Share via Device System Sheet...</span>
-              </button>
-            </div>
+          {hasNativeShare && <button type="button" className="share-button share-device" disabled={busy !== null} onClick={() => void handleNativeShare()}><Share2 size={16} aria-hidden="true" />{busy === 'share' ? 'Sharing…' : 'More sharing options'}</button>}
+          {onNavigateToSection && currentMeta.sectionId !== currentSectionId && (
+            <button type="button" className="share-jump" onClick={() => {
+              // Close the native modal before navigation so its automatic focus restoration cannot steal the destination focus.
+              restoreFocusRef.current = false;
+              close();
+              onNavigateToSection(currentMeta.sectionId);
+            }}>Explore {currentMeta.sectionLabel}<ExternalLink size={13} aria-hidden="true" /></button>
           )}
-
-          {/* Jump to section directly */}
-          {onNavigateToSection && selectedSectionId !== currentSectionId && (
-            <div className="mt-3 flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-800/60">
-              <span>Looking at another section?</span>
-              <button
-                type="button"
-                onClick={() => handleNavigateAndClose(selectedSectionId)}
-                className="text-amber-400 hover:text-amber-300 font-medium inline-flex items-center gap-1 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-amber-400"
-              >
-                Jump to &quot;{currentMeta.sectionLabel}&quot;
-                <ExternalLink className="w-3 h-3" />
-              </button>
-            </div>
-          )}
-        </div>
+        </footer>
       </div>
-    </div>
+    </dialog>
   );
 };

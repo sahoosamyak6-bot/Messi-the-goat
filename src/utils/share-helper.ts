@@ -18,10 +18,19 @@ export const SHAREABLE_SECTIONS: Record<string, SectionShareMetadata> = {
     sectionId: 'hero',
     sectionLabel: 'The Definitive Archive',
     previewTitle: 'Lionel Andrés Messi | The Definitive Archive & Chronicle',
-    badge: 'Overview · 1987–Present',
-    description: 'Explore the complete legacy of football’s greatest player: 849+ career goals, 378+ assists, 46 official trophies, and 8 Ballon d’Or awards.',
-    highlightStat: '46 Trophies · 8 Ballon d’Ors · 849+ Goals',
+    badge: 'Independent Fan Archive',
+    description: 'Explore Lionel Messi’s story through career milestones, archive photographs, historical statistics, and interactive playbooks.',
+    highlightStat: 'Career Stories · Archive Moments · Interactive Playbooks',
     hashtags: ['LionelMessi', 'GOAT', 'MessiArchive', 'FootballHistory'],
+  },
+  news: {
+    sectionId: 'news',
+    sectionLabel: 'Latest Coverage',
+    previewTitle: 'Latest Messi Coverage | The Lionel Messi Archive',
+    badge: 'Credited Publisher Coverage',
+    description: 'Browse recent Messi headlines from The Guardian, with source links and publication dates. Coverage refreshes separately from the historical archive.',
+    highlightStat: 'Publisher Headlines · Source Links · Publication Dates',
+    hashtags: ['LionelMessi', 'FootballNews', 'MessiArchive'],
   },
   'achievement-timeline': {
     sectionId: 'achievement-timeline',
@@ -36,9 +45,9 @@ export const SHAREABLE_SECTIONS: Record<string, SectionShareMetadata> = {
     sectionId: 'career-timeline',
     sectionLabel: 'Career Timeline',
     previewTitle: 'Interactive Career Timeline (2004–2025) | Lionel Messi',
-    badge: '21 Professional Seasons',
-    description: 'Explore 21 historic seasons year-by-year across FC Barcelona, Paris Saint-Germain, Inter Miami, and Argentina national team silverware.',
-    highlightStat: '21 Seasons · 4 Iconic Eras · 3 Historic Clubs',
+    badge: 'Historical Timeline · 2004–2025',
+    description: 'Explore the original archive’s historical season-by-season snapshot across FC Barcelona, Paris Saint-Germain, Inter Miami, and Argentina.',
+    highlightStat: 'Historical Snapshot · Club & Country',
     hashtags: ['MessiTimeline', 'FCBarcelona', 'Argentina', 'InterMiami'],
   },
   biography: {
@@ -53,10 +62,10 @@ export const SHAREABLE_SECTIONS: Record<string, SectionShareMetadata> = {
   statistics: {
     sectionId: 'statistics',
     sectionLabel: 'Career Statistics',
-    previewTitle: 'Career Statistics & All-Time Records | Lionel Messi Archive',
-    badge: 'Official Match Records',
-    description: 'Season-by-season match logs, goal tallies, playmaker assists, per-game averages, and breakdown across all domestic & international competitions.',
-    highlightStat: '1,080+ Matches · 849+ Goals · 378+ Assists',
+    previewTitle: 'Historical Career Statistics | Lionel Messi Archive',
+    badge: 'Historical Statistics Snapshot',
+    description: 'Explore season-by-season match, goal, and assist totals preserved from the original project. These archive figures are historical snapshots, not live career totals.',
+    highlightStat: 'Historical Snapshot: 1,080+ Matches · 849+ Goals · 378+ Assists',
     hashtags: ['MessiStats', 'Playmaker', 'GoalScorer', 'FootballRecords'],
   },
   gallery: {
@@ -68,23 +77,32 @@ export const SHAREABLE_SECTIONS: Record<string, SectionShareMetadata> = {
     highlightStat: 'Getafe Solo Run · Bernabéu 500th · Lusail Lift',
     hashtags: ['IconicMoments', 'ElClasico', 'Lusail2022', 'MessiMagic'],
   },
+  lab: {
+    sectionId: 'lab',
+    sectionLabel: 'The Messi Lab',
+    previewTitle: 'Genius, in Motion | The Interactive Messi Lab',
+    badge: 'Illustrative Playbooks',
+    description: 'Play, pause, scrub, and step through three historical plays using illustrative movement paths. These tactical diagrams are not measured player-tracking data.',
+    highlightStat: 'Three Playbooks · Step-by-Step Replay · Playback Controls',
+    hashtags: ['MessiLab', 'FootballTactics', 'LionelMessi'],
+  },
   'pitch-visualizer': {
     sectionId: 'pitch-visualizer',
     sectionLabel: 'Pitch Visualizer & Goal Lab',
     previewTitle: 'Interactive Tactical Pitch Visualizer | Lionel Messi Goal Lab',
     badge: 'Tactical Geometry',
-    description: 'Step into the Goal Lab: analyze pitch coordinates, dribble paths, defender displacements, and strike trajectories of Messi’s greatest goals.',
-    highlightStat: 'Animated Trajectories & Strike Geometry',
+    description: 'Explore the original Goal Lab’s animated dribble paths and strike trajectories. This interactive simulator is illustrative, not measured match tracking.',
+    highlightStat: 'Illustrative Trajectories & Strike Geometry',
     hashtags: ['GoalLab', 'FootballTactics', 'PitchVisualizer', 'MessiGoals'],
   },
   trophies: {
     sectionId: 'trophies',
     sectionLabel: 'The Golden Trophy Cabinet',
-    previewTitle: 'The Golden Cabinet: 46 Official Titles | Lionel Messi',
-    badge: 'All-Time Record Silverware',
-    description: 'Inspect the most decorated silverware collection in association football history: 46 official trophies, 10 La Ligas, 4 Champions Leagues, and the World Cup.',
-    highlightStat: '46 Major Honors · Most Decorated in History',
-    hashtags: ['TrophyCabinet', '46Titles', 'WorldChampion', 'GOAT'],
+    previewTitle: 'The Golden Cabinet: Historical Trophy Archive | Lionel Messi',
+    badge: 'Historical Trophy Snapshot',
+    description: 'Explore the original archive’s trophy collection, including La Liga, Champions League, and World Cup honors. Totals are historical snapshots, not a live tally.',
+    highlightStat: 'Historical Snapshot: 46 Major Honors',
+    hashtags: ['TrophyCabinet', 'MessiArchive', 'WorldChampion', 'GOAT'],
   },
   'trivia-quotes': {
     sectionId: 'trivia-quotes',
@@ -102,11 +120,13 @@ export const SHAREABLE_SECTIONS: Record<string, SectionShareMetadata> = {
  */
 export const SECTION_ORDER: string[] = [
   'hero',
+  'news',
   'achievement-timeline',
   'career-timeline',
   'biography',
   'statistics',
   'gallery',
+  'lab',
   'pitch-visualizer',
   'trophies',
   'trivia-quotes',
@@ -116,8 +136,8 @@ export const SECTION_ORDER: string[] = [
  * Returns metadata for a section ID with safe fallback to hero
  */
 export function getSectionShareMetadata(sectionId?: string): SectionShareMetadata {
-  if (!sectionId) return SHAREABLE_SECTIONS.hero;
-  return SHAREABLE_SECTIONS[sectionId] || SHAREABLE_SECTIONS.hero;
+  if (!sectionId || !Object.hasOwn(SHAREABLE_SECTIONS, sectionId)) return SHAREABLE_SECTIONS.hero;
+  return SHAREABLE_SECTIONS[sectionId];
 }
 
 /**
@@ -131,20 +151,21 @@ export function getAllShareableSections(): SectionShareMetadata[] {
  * Formats a section direct deep-link URL
  */
 export function buildSectionDirectUrl(sectionId?: string, baseUrl?: string): string {
-  const safeId = sectionId || 'hero';
+  const safeId = getSectionShareMetadata(sectionId).sectionId;
   let origin = baseUrl;
 
   if (!origin) {
     if (typeof window !== 'undefined' && window.location) {
       origin = `${window.location.origin}${window.location.pathname}`;
     } else {
-      origin = 'https://lionel-messi-archive.web.app/';
+      origin = 'https://messi-the-goat.vercel.app/';
     }
   }
 
-  // Remove existing hash or trailing slashes before appending anchor
-  const cleanedUrl = origin.split('#')[0].replace(/\/+$/, '');
-  return `${cleanedUrl}/#${safeId}`;
+  // Keep nested deployment paths and query parameters intact; replace only the fragment.
+  const url = new URL(origin, 'https://messi-the-goat.vercel.app/');
+  url.hash = safeId;
+  return url.href;
 }
 
 export interface PostSnippetOptions {
@@ -205,39 +226,70 @@ export function generateSocialIntentUrls(options: PostSnippetOptions = {}): Soci
   };
 }
 
-/**
- * Copies text to the system clipboard with robust fallback preserving user gesture
- */
-export async function copyTextToClipboard(text: string): Promise<boolean> {
-  if (typeof window === 'undefined') return false;
+export interface ClipboardOptions {
+  signal?: AbortSignal;
+  /** Keep the legacy selection inside a native modal, where the background is inert. */
+  container?: HTMLElement;
+}
 
-  // 1. Try synchronous textarea execCommand first to guarantee active user gesture activation
+/** Call only from an explicit copy gesture. Aborting prevents further attempts and stale feedback. */
+export async function copyTextToClipboard(text: string, options: ClipboardOptions = {}): Promise<boolean> {
+  const { signal, container } = options;
+  if (typeof window === 'undefined' || typeof document === 'undefined' || signal?.aborted) return false;
+
+  // Run the synchronous fallback first, while the original user activation is still available.
+  let textArea: HTMLTextAreaElement | null = null;
+  const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  const selection = window.getSelection?.() ?? null;
+  const previousRanges = selection
+    ? Array.from({ length: selection.rangeCount }, (_, index) => selection.getRangeAt(index).cloneRange())
+    : [];
+  const previousInputSelection = previousFocus instanceof HTMLInputElement || previousFocus instanceof HTMLTextAreaElement
+    ? { start: previousFocus.selectionStart, end: previousFocus.selectionEnd, direction: previousFocus.selectionDirection }
+    : null;
+
   try {
-    const textArea = document.createElement('textarea');
+    textArea = document.createElement('textarea');
     textArea.value = text;
-    textArea.style.position = 'fixed';
-    textArea.style.left = '-9999px';
-    textArea.style.top = '-9999px';
-    textArea.style.opacity = '0';
-    document.body.appendChild(textArea);
-    textArea.focus();
+    textArea.readOnly = true;
+    textArea.tabIndex = -1;
+    textArea.style.cssText = 'position:fixed;left:0;top:0;width:1px;height:1px;opacity:0;pointer-events:none;font-size:16px;';
+    const parent = container ?? document.querySelector('dialog[open]') ?? document.body;
+    parent.appendChild(textArea);
+    textArea.focus({ preventScroll: true });
     textArea.select();
-    const successful = document.execCommand('copy');
-    document.body.removeChild(textArea);
-    if (successful) return true;
+    if (document.execCommand('copy')) return true;
   } catch {
-    // Continue to Clipboard API fallback
-  }
-
-  // 2. Try modern Clipboard API
-  if (navigator?.clipboard?.writeText) {
+    // A missing or rejected legacy API may still allow the modern Clipboard API.
+  } finally {
+    textArea?.remove();
+    // Restoration is best-effort: detached ranges or an unavailable focus target must not
+    // turn an otherwise successful copy into a rejected promise or skip the next API.
+    try { if (previousFocus?.isConnected) previousFocus.focus({ preventScroll: true }); } catch { /* Target changed. */ }
     try {
-      await navigator.clipboard.writeText(text);
-      return true;
-    } catch {
-      // Both approaches failed
-    }
+      if (selection) {
+        selection.removeAllRanges();
+        for (const range of previousRanges) selection.addRange(range);
+      }
+    } catch { /* The original selection may have been detached. */ }
+    try {
+      if (previousFocus?.isConnected && previousInputSelection?.start != null && previousInputSelection.end != null) {
+        (previousFocus as HTMLInputElement | HTMLTextAreaElement).setSelectionRange(
+          previousInputSelection.start, previousInputSelection.end, previousInputSelection.direction ?? undefined,
+        );
+      }
+    } catch { /* Input type or selection support changed. */ }
   }
 
-  return true;
+  if (signal?.aborted) return false;
+  try {
+    if (typeof navigator !== 'undefined' && typeof navigator.clipboard?.writeText === 'function') {
+      await navigator.clipboard.writeText(text);
+      // Browsers cannot cancel an already-started native write, but its result must not update a closed dialog.
+      return !signal?.aborted;
+    }
+  } catch {
+    // Neither API succeeded. Never report a successful copy in this case.
+  }
+  return false;
 }

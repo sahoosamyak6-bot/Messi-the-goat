@@ -6,6 +6,8 @@ import {
   calculateScrollTrophyCount,
   calculateSectionScrollProgress,
   getTrophyTierLabel,
+  getNextTrophyCount,
+  TROPHY_ARCHIVE_YEAR,
   TOTAL_MAJOR_TROPHIES,
 } from '../utils/trophy-counter';
 import {
@@ -49,28 +51,27 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
   const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [isSectionInView, setIsSectionInView] = useState(false);
   const [visibleItems, setVisibleItems] = useState<Record<string, boolean>>({});
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(() =>
+    typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  );
   const [animationKey, setAnimationKey] = useState(0);
 
-  // Persistent animated trophy counter state
-  const [scrollProgress, setScrollProgress] = useState<number>(0);
-  const [targetTrophyCount, setTargetTrophyCount] = useState<number>(0);
-  const [displayedTrophyCount, setDisplayedTrophyCount] = useState<number>(0);
-  const [headerHeight, setHeaderHeight] = useState<number>(98);
-  const lastSoundTickRef = useRef<number>(0);
+  // This count is illustrative reading progress, not a trophy total per milestone.
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const targetTrophyCount = calculateScrollTrophyCount(scrollProgress);
+  const [displayedTrophyCount, setDisplayedTrophyCount] = useState(0);
+  const displayedCountRef = useRef(0);
+  const counterRef = useRef<HTMLDivElement>(null);
+  const [headerHeight, setHeaderHeight] = useState(98);
+  const [isDocumentVisible, setIsDocumentVisible] = useState(() =>
+    typeof document === 'undefined' || !document.hidden
+  );
+  const [pendingArchiveJump, setPendingArchiveJump] = useState(false);
 
-  // Keep sticky top offset synchronized with dynamic header height
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const updateHeaderHeight = () => {
-      const headerEl = document.querySelector('header');
-      if (headerEl) {
-        setHeaderHeight(headerEl.offsetHeight);
-      }
-    };
-    updateHeaderHeight();
-    window.addEventListener('resize', updateHeaderHeight);
-    return () => window.removeEventListener('resize', updateHeaderHeight);
+    const updateVisibility = () => setIsDocumentVisible(!document.hidden);
+    document.addEventListener('visibilitychange', updateVisibility);
+    return () => document.removeEventListener('visibilitychange', updateVisibility);
   }, []);
 
   // Detect user preference for reduced motion
@@ -149,78 +150,91 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
     };
   }, [animationKey]);
 
-  // Measure section scroll progress and update target trophy count
+  // Coalesce measurements and remeasure when the viewport, header, or content
+  // changes. Observing the page also catches shifts caused by content above us.
   useEffect(() => {
     if (typeof window === 'undefined') return;
-
-    let ticking = false;
-    const handleScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          if (sectionRef.current) {
-            const rect = sectionRef.current.getBoundingClientRect();
-            const sectionTop = window.scrollY + rect.top;
-            const sectionHeight = rect.height;
-            const headerEl = document.querySelector('header');
-            const navOffset = headerEl ? headerEl.offsetHeight : headerHeight;
-            const progress = calculateSectionScrollProgress(
-              window.scrollY,
-              sectionTop,
-              sectionHeight,
-              window.innerHeight,
-              navOffset
-            );
-            setScrollProgress(progress);
-
-            // Compute trophy count (0 to 46) based on scroll depth through the section
-            const count = calculateScrollTrophyCount(progress, TOTAL_MAJOR_TROPHIES, 0);
-            setTargetTrophyCount(count);
-          }
-          ticking = false;
-        });
-        ticking = true;
+    let frameId: number | null = null;
+    const measure = () => {
+      frameId = null;
+      if (document.hidden || !sectionRef.current) return;
+      const rect = sectionRef.current.getBoundingClientRect();
+      const navOffset = document.querySelector('header')?.getBoundingClientRect().height ?? 98;
+      setHeaderHeight(navOffset);
+      setScrollProgress(calculateSectionScrollProgress(
+        window.scrollY, window.scrollY + rect.top, rect.height, window.innerHeight, navOffset
+      ));
+    };
+    const scheduleMeasure = () => {
+      if (!document.hidden && frameId === null) frameId = window.requestAnimationFrame(measure);
+    };
+    const handleVisibility = () => {
+      if (document.hidden && frameId !== null) {
+        window.cancelAnimationFrame(frameId);
+        frameId = null;
+      } else {
+        scheduleMeasure();
       }
     };
+    const resizeObserver = typeof ResizeObserver !== 'undefined'
+      ? new ResizeObserver(scheduleMeasure)
+      : null;
+    [sectionRef.current, document.querySelector('header'), document.body].forEach((element) => {
+      if (element) resizeObserver?.observe(element);
+    });
+    window.addEventListener('scroll', scheduleMeasure, { passive: true });
+    window.addEventListener('resize', scheduleMeasure);
+    document.addEventListener('visibilitychange', handleVisibility);
+    scheduleMeasure();
+    return () => {
+      if (frameId !== null) window.cancelAnimationFrame(frameId);
+      resizeObserver?.disconnect();
+      window.removeEventListener('scroll', scheduleMeasure);
+      window.removeEventListener('resize', scheduleMeasure);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, []);
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll();
-
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [headerHeight]);
-
-  // Smooth number ticker animation: interpolate displayedTrophyCount to targetTrophyCount
+  // Stop at the target rather than maintaining a permanent animation loop.
+  // A hidden tab schedules no animation; reduced motion updates immediately.
   useEffect(() => {
+    if (!isDocumentVisible) return;
     if (prefersReducedMotion) {
+      displayedCountRef.current = targetTrophyCount;
       setDisplayedTrophyCount(targetTrophyCount);
       return;
     }
+    if (displayedCountRef.current === targetTrophyCount) return;
 
-    if (displayedTrophyCount === targetTrophyCount) return;
-
-    let animId: number;
+    let frameId: number | null = null;
     const step = () => {
-      setDisplayedTrophyCount((prev) => {
-        if (prev === targetTrophyCount) return prev;
-        const diff = targetTrophyCount - prev;
-        // Faster step if far, step by 1 if close
-        const stepSize = Math.abs(diff) > 4 ? Math.round(diff * 0.35) : Math.sign(diff);
-        const next = prev + stepSize;
-
-        if (Math.abs(next - lastSoundTickRef.current) >= 10 || next === TOTAL_MAJOR_TROPHIES) {
-          lastSoundTickRef.current = next;
-        }
-
-        if ((diff > 0 && next >= targetTrophyCount) || (diff < 0 && next <= targetTrophyCount)) {
-          return targetTrophyCount;
-        }
-        return next;
-      });
-      animId = requestAnimationFrame(step);
+      frameId = null;
+      if (document.hidden) return;
+      const next = getNextTrophyCount(displayedCountRef.current, targetTrophyCount);
+      displayedCountRef.current = next;
+      setDisplayedTrophyCount(next);
+      if (next !== targetTrophyCount) frameId = window.requestAnimationFrame(step);
     };
+    frameId = window.requestAnimationFrame(step);
+    return () => {
+      if (frameId !== null) window.cancelAnimationFrame(frameId);
+    };
+  }, [targetTrophyCount, prefersReducedMotion, isDocumentVisible]);
 
-    animId = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(animId);
-  }, [targetTrophyCount, prefersReducedMotion]);
+  // Restore a filtered-out archive milestone before scrolling, and keep it
+  // below both sticky bars on small as well as large screens.
+  useEffect(() => {
+    if (!pendingArchiveJump) return;
+    const archiveItem = document.getElementById('ach-46-trophies');
+    if (archiveItem) {
+      const counterHeight = counterRef.current?.getBoundingClientRect().height ?? 0;
+      window.scrollTo({
+        top: window.scrollY + archiveItem.getBoundingClientRect().top - headerHeight - counterHeight - 16,
+        behavior: prefersReducedMotion ? 'auto' : 'smooth',
+      });
+    }
+    setPendingArchiveJump(false);
+  }, [pendingArchiveJump, headerHeight, prefersReducedMotion, selectedCategory]);
 
   // Replay animation handler
   const handleReplayAnimation = () => {
@@ -264,48 +278,48 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
     switch (category) {
       case 'world_cup':
         return {
-          border: 'border-amber-400',
-          bg: 'bg-amber-400/10',
-          text: 'text-amber-300',
-          label: 'text-amber-400',
-          glow: 'shadow-amber-500/10',
-          nodeGlow: 'shadow-[0_0_15px_rgba(251,191,36,0.35)]',
+          border: 'border-sky-400',
+          bg: 'bg-sky-50',
+          text: 'text-[#154284]',
+          label: 'text-[#154284]',
+          glow: 'shadow-sky-900/5',
+          nodeGlow: 'shadow-[0_3px_14px_rgba(21,66,132,0.12)]',
         };
       case 'international':
         return {
           border: 'border-sky-400',
           bg: 'bg-sky-400/10',
-          text: 'text-sky-300',
-          label: 'text-sky-400',
+          text: 'text-sky-800',
+          label: 'text-sky-700',
           glow: 'shadow-sky-500/10',
-          nodeGlow: 'shadow-[0_0_15px_rgba(56,189,248,0.35)]',
+          nodeGlow: 'shadow-[0_3px_14px_rgba(117,170,219,0.18)]',
         };
       case 'individual':
         return {
-          border: 'border-amber-300',
-          bg: 'bg-amber-300/10',
-          text: 'text-amber-200',
-          label: 'text-amber-300',
-          glow: 'shadow-amber-400/10',
-          nodeGlow: 'shadow-[0_0_15px_rgba(252,211,77,0.35)]',
+          border: 'border-blue-300',
+          bg: 'bg-sky-50',
+          text: 'text-blue-900',
+          label: 'text-[#154284]',
+          glow: 'shadow-sky-900/5',
+          nodeGlow: 'shadow-[0_3px_14px_rgba(21,66,132,0.12)]',
         };
       case 'club_milestone':
         return {
-          border: 'border-pink-400',
+          border: 'border-rose-300',
           bg: 'bg-pink-400/10',
-          text: 'text-pink-300',
-          label: 'text-pink-400',
+          text: 'text-[#a50044]',
+          label: 'text-[#a50044]',
           glow: 'shadow-pink-500/10',
-          nodeGlow: 'shadow-[0_0_15px_rgba(244,114,182,0.35)]',
+          nodeGlow: 'shadow-[0_3px_14px_rgba(165,0,68,0.12)]',
         };
       default:
         return {
-          border: 'border-emerald-400',
+          border: 'border-emerald-300',
           bg: 'bg-emerald-400/10',
-          text: 'text-emerald-300',
-          label: 'text-emerald-400',
+          text: 'text-emerald-800',
+          label: 'text-emerald-700',
           glow: 'shadow-emerald-500/10',
-          nodeGlow: 'shadow-[0_0_15px_rgba(52,211,153,0.35)]',
+          nodeGlow: 'shadow-[0_3px_14px_rgba(52,211,153,0.12)]',
         };
     }
   };
@@ -358,84 +372,81 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
     <section
       ref={sectionRef}
       id="achievement-timeline"
-      className="scroll-mt-24 pb-16 sm:pb-24 pt-0 bg-[#060912] border-b border-slate-800/80 relative"
+      style={{ paddingTop: 0 }}
+      className="archive-content scroll-mt-24 pb-16 sm:pb-24 pt-0 bg-sky-50/70 border-b border-sky-100 relative"
     >
-      {/* Background ambient lighting */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-1/4 right-1/4 w-[600px] h-[400px] bg-amber-500/5 rounded-full blur-3xl" />
+      {/* Clip decorative lighting, not the sticky counter's scroll container. */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
+        <div className="absolute top-1/4 right-1/4 w-[600px] h-[400px] bg-sky-200/20 rounded-full blur-3xl" />
         <div className="absolute bottom-1/3 left-1/4 w-[500px] h-[350px] bg-sky-500/5 rounded-full blur-3xl" />
-        <div className="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:28px_28px] opacity-20" />
+        <div className="absolute inset-0 bg-[radial-gradient(#75aadb_1px,transparent_1px)] [background-size:28px_28px] opacity-20" />
       </div>
 
-      {/* Persistent Animated Major Silverware Counter Bar */}
+      {/* Persistent illustrative count-up; the archive total stays visible. */}
       <div
+        ref={counterRef}
         role="region"
-        aria-label="Persistent Major Trophies Counter"
+        aria-label="Illustrative trophy count-up, 46-title archive through 2024"
         style={{ top: `${headerHeight}px` }}
-        className="sticky z-30 w-full bg-[#070b14]/95 backdrop-blur-md border-b border-amber-500/30 shadow-xl shadow-black/40 py-2.5 px-4 sm:px-6 mb-10 transition-[top] duration-200"
+        className="sticky z-30 w-full bg-white/95 backdrop-blur-md border-b border-sky-200 shadow-lg shadow-sky-900/5 py-3 px-4 sm:px-6 mb-10"
       >
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-3 sm:gap-4 flex-wrap sm:flex-nowrap">
-          {/* Left: Trophy Icon & Live Animated Counter */}
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-amber-400/10 border border-amber-400/40 flex items-center justify-center text-amber-400 shadow-sm shrink-0">
-              <Trophy className="w-4 h-4 text-amber-400" />
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-sky-50 border border-sky-200 flex items-center justify-center text-[#154284] shrink-0" aria-hidden="true">
+              <Trophy className="w-4 h-4" />
             </div>
-
             <div>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-xl sm:text-2xl font-black font-serif-prestige text-amber-400 tabular-nums tracking-tight transition-transform duration-150 inline-block">
+              <div className="flex items-baseline gap-1.5 flex-wrap">
+                <span className="text-xl sm:text-2xl font-black font-sans text-[#154284] tabular-nums tracking-tight">
                   {displayedTrophyCount}
                 </span>
-                <span className="text-xs sm:text-sm font-mono font-medium text-slate-400">
-                  / 46
+                <span className="text-sm font-mono font-semibold text-slate-600">
+                  / {TOTAL_MAJOR_TROPHIES}
                 </span>
-                <span className="text-xs font-mono uppercase tracking-wider text-slate-200 font-semibold ml-1">
-                  Major Trophies Won
+                <span className="text-[11px] sm:text-xs font-mono uppercase tracking-wide text-slate-700 font-semibold sm:ml-1">
+                  Illustrative count-up
                 </span>
               </div>
-              <div className="text-[10px] sm:text-[11px] font-mono text-slate-400 flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                <span>Scroll updates count in real time</span>
-                <span className="text-slate-600 hidden md:inline">·</span>
-                <span className="text-amber-300/90 hidden md:inline font-medium">{tierInfo.tagline}</span>
-              </div>
+              <p className="text-[10px] sm:text-[11px] font-mono text-slate-600">
+                {TOTAL_MAJOR_TROPHIES}-title archive through {TROPHY_ARCHIVE_YEAR} · Not a live total
+              </p>
+              <p className="text-[10px] font-mono text-slate-500 hidden md:block">{tierInfo.tagline}</p>
             </div>
           </div>
 
-          {/* Right: Progress Indicator & Quick Summit Jump */}
           <div className="flex items-center gap-3 ml-auto sm:ml-0">
             <div className="hidden lg:flex flex-col items-end">
-              <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400">
-                Timeline Progress
-              </span>
-              <span className="text-xs font-mono font-bold text-amber-300 tabular-nums">
-                {Math.round((displayedTrophyCount / 46) * 100)}%
-              </span>
+              <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500">Reading progress</span>
+              <span className="text-xs font-mono font-bold text-[#154284] tabular-nums">{Math.round(scrollProgress * 100)}%</span>
             </div>
-
             <button
               type="button"
               onClick={() => {
-                soundFx.playCelebrationChime();
-                const summitEl = document.getElementById('ach-46-trophies');
-                if (summitEl) {
-                  summitEl.scrollIntoView({ behavior: 'smooth' });
-                }
+                soundFx.playClickTone();
+                setSelectedCategory('all');
+                setExpandedItems((previous) => ({ ...previous, 'ach-46-trophies': true }));
+                setPendingArchiveJump(true);
               }}
-              className="px-3 py-1.5 rounded-lg bg-[#0e172a] hover:bg-[#1e293b] border border-amber-400/40 hover:border-amber-400 text-amber-300 text-xs font-mono font-medium transition-all flex items-center gap-1.5 shadow-sm hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
-              title="Jump to the 46-trophy world record milestone"
+              className="px-3 py-2 rounded-lg bg-sky-50 hover:bg-sky-100 border border-sky-200 text-[#154284] text-xs font-mono font-medium transition-colors flex items-center gap-1.5"
+              title="Jump to the historical 46-title milestone from 2024"
             >
-              <Trophy className="w-3.5 h-3.5 text-amber-400" />
-              <span>Summit: 46 Titles</span>
+              <Trophy className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>2024 milestone</span>
             </button>
           </div>
         </div>
 
-        {/* Slim Animated Progress Bar at bottom of sticky counter */}
-        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-slate-800">
+        <div
+          role="progressbar"
+          aria-label="Achievement section reading progress, not historical trophy totals"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(scrollProgress * 100)}
+          className="absolute bottom-0 left-0 right-0 h-0.5 bg-sky-100"
+        >
           <div
-            className="h-full bg-gradient-to-r from-amber-500 via-amber-400 to-sky-400 transition-all duration-200 ease-out"
-            style={{ width: `${(displayedTrophyCount / 46) * 100}%` }}
+            className="h-full bg-gradient-to-r from-[#154284] to-sky-400 motion-safe:transition-[width] motion-safe:duration-200"
+            style={{ width: `${scrollProgress * 100}%` }}
           />
         </div>
       </div>
@@ -450,34 +461,34 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
           }`}
         >
           <div>
-            <div className="flex items-center gap-2 text-xs font-mono tracking-widest text-amber-400 uppercase mb-3">
-              <Trophy className="w-4 h-4 text-amber-400 inline" />
+            <div className="flex items-center gap-2 text-xs font-mono tracking-widest text-[#154284] uppercase mb-3">
+              <Trophy className="w-4 h-4 text-[#154284] inline" />
               <span>Comprehensive Milestone Summary · All 6 Accomplishments</span>
             </div>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold font-serif-prestige tracking-tight text-white uppercase leading-tight">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold font-sans tracking-tight text-slate-950 leading-tight">
               Achievement Timeline
             </h2>
-            <p className="mt-3 text-slate-300 text-sm sm:text-base lg:text-lg font-light max-w-2xl leading-relaxed text-balance">
-              A chronological vertical chronicle of Lionel Messi&rsquo;s six defining career accomplishments — from breaking international records to the World Cup crown and an unprecedented 46th trophy.
+            <p className="mt-3 text-slate-600 text-sm sm:text-base lg:text-lg font-normal max-w-2xl leading-relaxed text-balance">
+              A chronological vertical chronicle of Lionel Messi&rsquo;s six defining career accomplishments — from breaking international records to the World Cup crown and the historical 46-title snapshot in 2024.
             </p>
           </div>
 
           {/* Quick Stats Summary Badge */}
-          <div className="bg-[#0b121e] border border-slate-800 p-4 rounded-xl flex items-center gap-6 self-start md:self-end shadow-md">
+          <div className="bg-white border border-sky-100 p-4 rounded-2xl flex items-center gap-6 self-start md:self-end shadow-md shadow-sky-900/5">
             <div>
-              <span className="text-[10px] font-mono text-slate-400 uppercase block tracking-wider">
+              <span className="text-[10px] font-mono text-slate-600 uppercase block tracking-wider">
                 Accomplishments
               </span>
-              <span className="text-2xl font-bold font-serif-prestige text-amber-400 tabular-nums">
+              <span className="text-2xl font-bold font-sans text-[#154284] tabular-nums">
                 6 / 6
               </span>
             </div>
-            <div className="h-8 w-px bg-slate-800" />
+            <div className="h-8 w-px bg-sky-100" />
             <div>
-              <span className="text-[10px] font-mono text-slate-400 uppercase block tracking-wider">
+              <span className="text-[10px] font-mono text-slate-600 uppercase block tracking-wider">
                 Chronology Span
               </span>
-              <span className="text-sm font-bold font-mono text-slate-200 tabular-nums">
+              <span className="text-sm font-bold font-mono text-slate-800 tabular-nums">
                 2016 – 2024
               </span>
             </div>
@@ -486,7 +497,7 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
 
         {/* Toolbar: Filters, Sort, Expand Controls, and Replay Reveal */}
         <div
-          className={`bg-[#080d16] p-3 sm:p-4 rounded-xl border border-slate-800/90 shadow-inner mb-10 flex flex-wrap items-center justify-between gap-3 transition-all duration-700 delay-100 ease-out ${
+          className={`bg-sky-50/70 p-3 sm:p-4 rounded-2xl border border-sky-100 shadow-sm shadow-sky-900/5 mb-10 flex flex-wrap items-center justify-between gap-3 transition-all duration-700 delay-100 ease-out ${
             prefersReducedMotion || isSectionInView
               ? 'opacity-100 translate-y-0'
               : 'opacity-0 translate-y-4'
@@ -494,7 +505,7 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
         >
           {/* Category Filter Tabs */}
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-xs font-mono text-slate-400 mr-1 hidden sm:inline-flex items-center gap-1">
+            <span className="text-xs font-mono text-slate-600 mr-1 hidden sm:inline-flex items-center gap-1">
               <Filter className="w-3.5 h-3.5 text-slate-500" />
               <span>Filter:</span>
             </span>
@@ -512,10 +523,11 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
                   soundFx.playClickTone();
                   setSelectedCategory(tab.id);
                 }}
-                className={`px-3 py-1.5 text-xs font-medium rounded transition-colors whitespace-nowrap ${
+                aria-pressed={selectedCategory === tab.id}
+                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap ${
                   selectedCategory === tab.id
-                    ? 'bg-amber-400 text-slate-950 font-semibold shadow-sm'
-                    : 'text-slate-400 hover:text-white bg-slate-900/60 border border-slate-800'
+                    ? 'bg-[#154284] text-white font-semibold shadow-sm'
+                    : 'text-slate-600 hover:text-slate-950 bg-sky-50/70 border border-sky-100'
                 }`}
               >
                 {tab.label}
@@ -528,17 +540,17 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
             <button
               type="button"
               onClick={handleSortToggle}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-mono rounded border border-slate-800 transition-colors whitespace-nowrap"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-sky-50 hover:bg-sky-100 text-slate-600 text-xs font-mono rounded-lg border border-sky-100 transition-colors whitespace-nowrap"
               title="Toggle Chronological Direction"
             >
-              <ArrowUpDown className="w-3.5 h-3.5 text-amber-400" />
+              <ArrowUpDown className="w-3.5 h-3.5 text-[#154284]" />
               <span>{sortDirection === 'asc' ? '2016 → 2024' : '2024 → 2016'}</span>
             </button>
 
             <button
               type="button"
               onClick={handleExpandAll}
-              className="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 text-xs font-mono rounded border border-slate-800 transition-colors whitespace-nowrap"
+              className="px-2.5 py-1.5 bg-sky-50 hover:bg-sky-100 text-slate-600 hover:text-slate-800 text-xs font-mono rounded-lg border border-sky-100 transition-colors whitespace-nowrap"
               title="Expand All Milestone Details"
             >
               Expand All
@@ -547,7 +559,7 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
             <button
               type="button"
               onClick={handleCollapseAll}
-              className="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 text-xs font-mono rounded border border-slate-800 transition-colors whitespace-nowrap"
+              className="px-2.5 py-1.5 bg-sky-50 hover:bg-sky-100 text-slate-600 hover:text-slate-800 text-xs font-mono rounded-lg border border-sky-100 transition-colors whitespace-nowrap"
               title="Collapse to Concise Summaries"
             >
               Collapse
@@ -556,7 +568,7 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
             <button
               type="button"
               onClick={handleReplayAnimation}
-              className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-900/80 hover:bg-amber-400/20 text-amber-400/90 hover:text-amber-300 text-xs font-mono rounded border border-amber-400/30 transition-colors whitespace-nowrap"
+              className="flex items-center gap-1 px-2.5 py-1.5 bg-sky-50 hover:bg-sky-100 text-[#154284] hover:text-[#154284] text-xs font-mono rounded-lg border border-sky-200 transition-colors whitespace-nowrap"
               title="Replay slide-in scroll reveal animation"
             >
               <RotateCcw className="w-3.5 h-3.5" />
@@ -566,7 +578,7 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
         </div>
 
         {/* Chronological Vertical List with responsive left margin & spine line */}
-        <div className="relative pl-10 sm:pl-14 space-y-8 before:absolute before:left-[17px] sm:before:left-[21px] before:top-4 before:bottom-6 before:w-0.5 before:bg-gradient-to-b before:from-amber-400 before:via-sky-400 before:to-amber-500">
+        <div className="relative pl-10 sm:pl-14 space-y-8 before:absolute before:left-[17px] sm:before:left-[21px] before:top-4 before:bottom-6 before:w-0.5 before:bg-gradient-to-b before:from-[#154284] before:via-sky-400 before:to-[#a50044]">
           {sortedItems.map((item, index) => {
             const Icon = getIconForCategory(item.category);
             const styling = getAccentForCategory(item.category);
@@ -593,9 +605,9 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
               >
                 {/* Timeline Node Marker accurately centered on the spine with pulse on reveal */}
                 <div
-                  className={`absolute -left-[37px] sm:-left-[45px] top-6 w-8 h-8 rounded-full bg-[#0a0f19] border-2 ${
+                  className={`absolute -left-[37px] sm:-left-[45px] top-6 w-8 h-8 rounded-full bg-white border-2 ${
                     styling.border
-                  } flex items-center justify-center shadow-lg transition-all duration-500 ${
+                  } flex items-center justify-center shadow-lg shadow-sky-900/5 transition-all duration-500 ${
                     isItemVisible ? `${styling.nodeGlow} scale-100` : 'scale-75 opacity-70'
                   } group-hover:scale-110 z-10`}
                 >
@@ -604,10 +616,10 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
 
                 {/* Milestone Card with subtle slide-in finish */}
                 <div
-                  className={`bg-[#0a0f1a] rounded-xl border transition-all duration-300 overflow-hidden ${
+                  className={`bg-white rounded-2xl border transition-all duration-300 overflow-hidden ${
                     isExpanded
-                      ? `${styling.border} shadow-xl ${styling.glow}`
-                      : 'border-slate-800 hover:border-slate-700'
+                      ? `${styling.border} shadow-xl shadow-sky-900/5 ${styling.glow}`
+                      : 'border-sky-100 hover:border-sky-200'
                   }`}
                 >
                   {/* Card Header & Summary Bar */}
@@ -621,31 +633,31 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
                         <span className={`font-semibold tabular-nums ${styling.label}`}>
                           {item.year} · {item.dateStr}
                         </span>
-                        <span className="text-slate-600" aria-hidden="true">·</span>
-                        <span className="text-slate-400 font-medium uppercase tracking-wider text-[11px]">
+                        <span className="text-slate-500" aria-hidden="true">·</span>
+                        <span className="text-slate-600 font-medium uppercase tracking-wider text-[11px]">
                           {item.badge}
                         </span>
-                        <span className="text-slate-600" aria-hidden="true">·</span>
-                        <span className="text-amber-400/90 font-mono text-[11px] tabular-nums">
+                        <span className="text-slate-500" aria-hidden="true">·</span>
+                        <span className="text-[#154284] font-mono text-[11px] tabular-nums">
                           Milestone #{item.order} of 6
                         </span>
                       </div>
 
                       {/* Accomplishment Title */}
-                      <h3 className="text-xl sm:text-2xl font-bold font-serif-prestige text-white group-hover:text-amber-300 transition-colors">
+                      <h3 className="text-xl sm:text-2xl font-bold font-sans text-slate-950 group-hover:text-[#154284] transition-colors">
                         {item.title}
                       </h3>
 
                       {/* Primary Verbatim Accomplishment Statement */}
-                      <p className="mt-2 text-sm sm:text-base text-slate-200 font-medium leading-relaxed">
+                      <p className="mt-2 text-sm sm:text-base text-slate-800 font-medium leading-relaxed">
                         &ldquo;{item.summary}&rdquo;
                       </p>
                     </div>
 
                     {/* Metric Badge & Expand Icon */}
-                    <div className="flex items-center justify-between lg:justify-end gap-3 shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-800/60">
-                      <div className="bg-[#070b14] px-3.5 py-2 rounded-lg border border-slate-800/90 text-left lg:text-right font-mono">
-                        <span className="text-[10px] text-slate-400 block uppercase tracking-wider">
+                    <div className="flex items-center justify-between lg:justify-end gap-3 shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-sky-100">
+                      <div className="bg-sky-50 px-3.5 py-2 rounded-2xl border border-sky-100 text-left lg:text-right font-mono">
+                        <span className="text-[10px] text-slate-600 block uppercase tracking-wider">
                           {item.metrics.label}
                         </span>
                         <span className={`text-sm sm:text-base font-bold tabular-nums ${styling.text}`}>
@@ -656,10 +668,11 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
                       <button
                         type="button"
                         aria-label={isExpanded ? 'Collapse milestone details' : 'Expand milestone details'}
-                        className="p-2 rounded-lg bg-slate-900 text-slate-400 hover:text-white border border-slate-800 transition-colors shrink-0"
+                        aria-expanded={isExpanded}
+                        className="p-2 rounded-2xl bg-sky-50 text-slate-600 hover:text-slate-950 border border-sky-100 transition-colors shrink-0"
                       >
                         {isExpanded ? (
-                          <ChevronUp className="w-5 h-5 text-amber-400" />
+                          <ChevronUp className="w-5 h-5 text-[#154284]" />
                         ) : (
                           <ChevronDown className="w-5 h-5" />
                         )}
@@ -669,21 +682,21 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
 
                   {/* Expanded In-depth Story & Cross-link Details */}
                   {isExpanded && (
-                    <div className="px-5 pb-6 sm:px-6 pt-2 border-t border-slate-800/80 bg-slate-950/40 space-y-5 animate-in fade-in duration-200">
+                    <div className="px-5 pb-6 sm:px-6 pt-2 border-t border-sky-100 bg-sky-50/70 space-y-5 animate-in fade-in duration-200">
                       {/* Deep Historical Details */}
-                      <div className="text-sm text-slate-300 leading-relaxed font-normal">
+                      <div className="text-sm text-slate-600 leading-relaxed font-normal">
                         <p>{item.details}</p>
                       </div>
 
                       {/* Highlight Quote if available */}
                       {item.quote && (
-                        <div className="p-4 rounded-lg bg-[#080d16] border border-slate-800/90 flex items-start gap-3">
-                          <Quote className="w-5 h-5 text-amber-400/80 shrink-0 mt-0.5" />
+                        <div className="p-4 rounded-2xl bg-sky-50/70 border border-sky-100 flex items-start gap-3">
+                          <Quote className="w-5 h-5 text-[#154284] shrink-0 mt-0.5" />
                           <div>
-                            <p className="text-xs sm:text-sm italic text-slate-200 leading-relaxed font-light">
+                            <p className="text-xs sm:text-sm italic text-slate-800 leading-relaxed font-normal">
                               &ldquo;{item.quote.text}&rdquo;
                             </p>
-                            <span className="mt-1 block text-xs font-mono text-amber-400">
+                            <span className="mt-1 block text-xs font-mono text-[#154284]">
                               — {item.quote.author}
                             </span>
                           </div>
@@ -707,9 +720,9 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
                               onSyncSeasonFilter(seasonMap[item.year] || `${item.year}`);
                               if (onNavigate) onNavigate('statistics');
                             }}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 text-xs font-mono transition-colors whitespace-nowrap"
+                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-sky-50 hover:bg-sky-100 text-slate-600 hover:text-slate-950 border border-sky-100 text-xs font-mono transition-colors whitespace-nowrap"
                           >
-                            <Calendar className="w-3.5 h-3.5 text-amber-400" />
+                            <Calendar className="w-3.5 h-3.5 text-[#154284]" />
                             <span>Inspect {item.year} Match Statistics</span>
                             <ArrowRight className="w-3 h-3 text-slate-500" />
                           </button>
@@ -727,9 +740,9 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
                                 onNavigate('trophies');
                               }
                             }}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded bg-slate-900 hover:bg-slate-800 text-sky-300 hover:text-sky-200 border border-slate-800 text-xs font-mono transition-colors whitespace-nowrap"
+                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-800 hover:text-sky-800 border border-sky-100 text-xs font-mono transition-colors whitespace-nowrap"
                           >
-                            <Star className="w-3.5 h-3.5 text-sky-400" />
+                            <Star className="w-3.5 h-3.5 text-sky-700" />
                             <span>
                               {item.category === 'world_cup'
                                 ? 'View Lusail World Cup Moments'
@@ -748,16 +761,16 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
         </div>
 
         {/* Bottom Editorial Callout Note */}
-        <div className="mt-14 p-6 rounded-xl bg-gradient-to-r from-slate-900/80 via-[#0a101d] to-slate-900/80 border border-slate-800 text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="mt-14 p-6 rounded-2xl bg-gradient-to-r from-sky-50 via-white to-sky-50 border border-sky-100 text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-amber-400/10 border border-amber-400/30 flex items-center justify-center shrink-0">
-              <CheckCircle2 className="w-5 h-5 text-amber-400" />
+            <div className="w-10 h-10 rounded-full bg-sky-50 border border-sky-200 flex items-center justify-center shrink-0">
+              <CheckCircle2 className="w-5 h-5 text-[#154284]" />
             </div>
             <div>
-              <div className="text-sm font-bold font-serif-prestige text-white">
+              <div className="text-sm font-bold font-sans text-slate-950">
                 All 6 Crown Accomplishments Verified
               </div>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-600">
                 Official FIFA, CONMEBOL, UEFA, France Football, and MLS records compiled chronologically.
               </p>
             </div>
@@ -770,7 +783,7 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
                 soundFx.playClickTone();
                 onNavigate('career-timeline');
               }}
-              className="px-4 py-2 bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-semibold rounded font-mono transition-colors shrink-0 flex items-center gap-1.5 whitespace-nowrap"
+              className="px-4 py-2 bg-[#154284] hover:bg-[#10366e] text-white text-xs font-semibold rounded-lg font-mono transition-colors shrink-0 flex items-center gap-1.5 whitespace-nowrap"
             >
               <span>Explore 21-Season Career Timeline</span>
               <ArrowRight className="w-3.5 h-3.5" />

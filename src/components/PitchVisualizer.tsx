@@ -5,26 +5,57 @@ import { Play, Pause, RotateCcw, Volume2, Shield, Activity, Award, Compass, Shar
 import { soundFx } from '../utils/audio';
 
 interface PitchVisualizerProps {
+  active?: boolean;
   onShareSection?: () => void;
 }
 
-export const PitchVisualizer: React.FC<PitchVisualizerProps> = ({ onShareSection }) => {
+export const PitchVisualizer: React.FC<PitchVisualizerProps> = ({ active = true, onShareSection }) => {
   const [selectedGoalId, setSelectedGoalId] = useState<string>(ICONIC_GOALS_TACTICAL[0].id);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [playbackProgress, setPlaybackProgress] = useState<number>(100); // 0 to 100
+  const [reducedMotion, setReducedMotion] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+  );
 
   const activeGoal = ICONIC_GOALS_TACTICAL.find((g) => g.id === selectedGoalId) || ICONIC_GOALS_TACTICAL[0];
 
+  useEffect(() => {
+    const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const updatePreference = () => {
+      setReducedMotion(preference.matches);
+      if (preference.matches) setIsPlaying(false);
+    };
+    const pauseWhenHidden = () => { if (document.hidden) setIsPlaying(false); };
+    updatePreference();
+    preference.addEventListener('change', updatePreference);
+    document.addEventListener('visibilitychange', pauseWhenHidden);
+    return () => {
+      preference.removeEventListener('change', updatePreference);
+      document.removeEventListener('visibilitychange', pauseWhenHidden);
+    };
+  }, []);
+
   // Play animation loop
   useEffect(() => {
-    let animId: number;
+    let animId: number | undefined;
     let start: number | null = null;
     const duration = 3000; // 3 seconds
+    const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    if (!active || reducedMotion || document.hidden) {
+      if (isPlaying) setIsPlaying(false);
+      return;
+    }
 
     if (isPlaying) {
       soundFx.playBallKick();
       const step = (timestamp: number) => {
-        if (!start) start = timestamp;
+        // Check current visibility/preferences before a queued frame can finish or play audio.
+        if (document.hidden || preference.matches) {
+          setIsPlaying(false);
+          return;
+        }
+        if (start === null) start = timestamp;
         const progress = Math.min(((timestamp - start) / duration) * 100, 100);
         setPlaybackProgress(progress);
 
@@ -39,9 +70,9 @@ export const PitchVisualizer: React.FC<PitchVisualizerProps> = ({ onShareSection
     }
 
     return () => {
-      if (animId) cancelAnimationFrame(animId);
+      if (animId !== undefined) cancelAnimationFrame(animId);
     };
-  }, [isPlaying]);
+  }, [isPlaying, active, reducedMotion]);
 
   const handleSelectGoal = (id: string) => {
     soundFx.playClickTone();
@@ -51,6 +82,7 @@ export const PitchVisualizer: React.FC<PitchVisualizerProps> = ({ onShareSection
   };
 
   const handleTogglePlay = () => {
+    if (!active || reducedMotion || document.hidden) return;
     if (isPlaying) {
       setIsPlaying(false);
     } else {
@@ -95,34 +127,18 @@ export const PitchVisualizer: React.FC<PitchVisualizerProps> = ({ onShareSection
     <section id="pitch-visualizer" className="py-20 bg-[#060a12] border-b border-slate-800/80">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
-          <div className="max-w-3xl">
-            <div className="flex items-center gap-2 text-xs font-mono tracking-widest text-amber-400 uppercase mb-3">
-              <Compass className="w-4 h-4 text-amber-400 inline" />
-              <span>Interactive Tactical Lab</span>
-            </div>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold font-serif-prestige tracking-tight text-white uppercase">
-              The Pitch Visualizer
-            </h2>
-            <p className="mt-3 text-slate-300 text-base sm:text-lg font-light leading-relaxed">
-              Examine the geometry, dribble trajectories, defender displacements, and terminal strike velocities of Lionel Messi&rsquo;s most celebrated goals.
-            </p>
+        <div className="max-w-3xl mb-10">
+          <div className="flex items-center gap-2 text-xs font-mono tracking-widest text-amber-400 uppercase mb-3">
+            <Compass className="w-4 h-4 text-amber-400 inline" />
+            <span>Interactive Tactical Lab</span>
           </div>
-
-          {onShareSection && (
-            <button
-              type="button"
-              onClick={() => {
-                soundFx.playClickTone();
-                onShareSection();
-              }}
-              className="self-start md:self-end flex items-center gap-2 px-3.5 py-2 rounded-lg bg-[#0d1424] hover:bg-[#121c32] border border-slate-700/80 hover:border-amber-400/50 text-slate-300 hover:text-white transition-all text-xs font-medium shadow-sm group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
-              title="Share Pitch Visualizer & Goal Lab link"
-            >
-              <Share2 className="w-3.5 h-3.5 text-amber-400 group-hover:scale-110 transition-transform" />
-              <span>Share Goal Lab</span>
-            </button>
-          )}
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold font-serif-prestige tracking-tight text-white uppercase">
+            The Pitch Visualizer
+          </h2>
+          <p className="mt-3 text-slate-300 text-base sm:text-lg font-light leading-relaxed">
+            Examine the geometry, dribble trajectories, defender displacements, and terminal strike velocities of Lionel Messi&rsquo;s most celebrated goals.
+          </p>
+          {onShareSection && <button type="button" onClick={onShareSection} className="mt-4 inline-flex items-center gap-2 rounded-md border border-sky-300/40 px-4 py-2 text-sm text-sky-100 hover:bg-sky-100/10"><Share2 size={15} /> Share Goal Lab</button>}
         </div>
 
         {/* Goal Selector Buttons */}
@@ -166,7 +182,9 @@ export const PitchVisualizer: React.FC<PitchVisualizerProps> = ({ onShareSection
                 <button
                   type="button"
                   onClick={handleTogglePlay}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-semibold rounded transition-colors"
+                  disabled={!active || reducedMotion}
+                  title={reducedMotion ? 'Animation is disabled for reduced motion. The complete route is shown on the pitch.' : undefined}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-semibold rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isPlaying ? (
                     <>

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://messi-the-goat.vercel.app/sitemap.xml

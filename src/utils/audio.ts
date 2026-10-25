@@ -2,7 +2,8 @@
 
 class SoundEffects {
   private ctx: AudioContext | null = null;
-  private isMuted: boolean = false;
+  // Sound is opt-in; browsing and automatic playback stay quiet.
+  private isMuted: boolean = true;
 
   private initContext() {
     if (!this.ctx && typeof window !== 'undefined') {

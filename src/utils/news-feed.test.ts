@@ -1,0 +1,10 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { isNewsStale, parseNewsResponse } from './news-feed';
+const item = { title: 'Messi match report', href: 'https://www.theguardian.com/football/2026/oct/07/messi', publishedAt: '2026-10-07T10:00:00Z', author: 'Sports desk' };
+const feed = (items: unknown[]) => ({ status: 'ok', fetchedAt: '2026-10-25T10:00:00Z', items });
+test('news response keeps valid source, dates and byline', () => { const result = parseNewsResponse(feed([item])); assert.equal(result.items[0].author, 'Sports desk'); assert.equal(result.items[0].source, 'The Guardian'); assert.equal(result.items[0].publishedAt, '2026-10-07T10:00:00.000Z'); });
+test('news response rejects unsafe URLs, markup, invalid dates and duplicates', () => { assert.equal(parseNewsResponse(feed([item, item, { ...item, href: 'javascript:alert(1)' }, { ...item, href: 'https://www.theguardian.com.evil.test/story' }, { ...item, href: 'https://user@www.theguardian.com/story' }, { ...item, title: '<img src=x>' }, { ...item, publishedAt: 'not a date' }])).items.length, 1); });
+test('headline excerpt stays under 100 words and at most six items', () => { const items = Array.from({ length: 10 }, (_, i) => ({ ...item, title: Array(20).fill('word').join(' '), href: `${item.href}-${i}` })); assert.equal(parseNewsResponse(feed(items)).items.length, 4); });
+test('invalid or unavailable API responses fail without fake headlines', () => { assert.throws(() => parseNewsResponse(null)); assert.throws(() => parseNewsResponse({ ...feed([]), status: 'unavailable' })); assert.throws(() => parseNewsResponse({ ...feed([]), fetchedAt: 'invalid' })); });
+test('stale detection uses retrieval time, not article publication date', () => { const now = Date.parse('2026-10-25T12:00:00Z'); assert.equal(isNewsStale('2026-10-25T11:00:00Z', now), false); assert.equal(isNewsStale('2026-10-25T09:00:00Z', now), true); assert.equal(isNewsStale('2026-10-25T13:00:00Z', now), true); });

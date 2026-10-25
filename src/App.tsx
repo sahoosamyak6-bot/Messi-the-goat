@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
 import { AchievementTimeline } from './components/AchievementTimeline';
@@ -14,22 +14,11 @@ import { MomentModal } from './components/MomentModal';
 import { GlobalSearchOverlay } from './components/GlobalSearchOverlay';
 import { IconicMoment } from './data/messi-data';
 import { SearchIndexItem } from './utils/searchIndex';
-import { Trophy, Search, Share2 } from 'lucide-react';
-import { soundFx } from './utils/audio';
+import { LegacyLab } from './components/LegacyLab';
+import { LatestCoverage } from './components/LatestCoverage';
 import { ShareModal } from './components/ShareModal';
-import { getSectionShareMetadata } from './utils/share-helper';
-
-const SECTION_IDS = [
-  'hero',
-  'achievement-timeline',
-  'career-timeline',
-  'biography',
-  'statistics',
-  'gallery',
-  'pitch-visualizer',
-  'trophies',
-  'trivia-quotes',
-];
+import { soundFx } from './utils/audio';
+import { sectionFromHash } from './utils/navigation';
 
 export default function App() {
   const [activeSection, setActiveSection] = useState<string>('hero');
@@ -39,59 +28,32 @@ export default function App() {
   const [selectedTimelineYear, setSelectedTimelineYear] = useState<number | undefined>(undefined);
   const [selectedTrophyId, setSelectedTrophyId] = useState<string | undefined>(undefined);
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
-  const [isShareOpen, setIsShareOpen] = useState<boolean>(false);
-  const [shareTargetSection, setShareTargetSection] = useState<string>('hero');
+  const [isShareOpen, setIsShareOpen] = useState(false);
+  const [shareTargetSection, setShareTargetSection] = useState('hero');
 
-  // Deep linking: read window.location.hash on initial mount & hashchange
-  useEffect(() => {
-    const handleHash = () => {
-      const hash = window.location.hash.replace('#', '');
-      if (hash && SECTION_IDS.includes(hash)) {
-        setActiveSection(hash);
-        const element = document.getElementById(hash);
-        if (element) {
-          setTimeout(() => {
-            element.scrollIntoView({ behavior: 'smooth' });
-          }, 150);
-        }
-      }
-    };
+  const [originalLabOpen, setOriginalLabOpen] = useState(false);
+  const [requestKeys, setRequestKeys] = useState({ chapter: 0, year: 0, trophy: 0, statistics: 0 });
+  const requestSelection = (key: keyof typeof requestKeys) => setRequestKeys(previous => ({ ...previous, [key]: previous[key] + 1 }));
 
-    handleHash();
-    window.addEventListener('hashchange', handleHash);
-    return () => window.removeEventListener('hashchange', handleHash);
-  }, []);
+  const originalLabRef = useRef<HTMLDetailsElement>(null);
 
-  // IntersectionObserver to observe visible section on scroll
-  useEffect(() => {
-    if (typeof window === 'undefined' || !('IntersectionObserver' in window)) return;
-
-    const handleIntersect: IntersectionObserverCallback = (entries) => {
-      for (const entry of entries) {
-        if (entry.isIntersecting && entry.intersectionRatio >= 0.2) {
-          setActiveSection(entry.target.id);
-        }
-      }
-    };
-
-    const observer = new IntersectionObserver(handleIntersect, {
-      root: null,
-      rootMargin: '-20% 0px -40% 0px',
-      threshold: [0.2, 0.4],
-    });
-
-    SECTION_IDS.forEach((id) => {
-      const el = document.getElementById(id);
-      if (el) observer.observe(el);
-    });
-
-    return () => observer.disconnect();
-  }, []);
-
-  // Global keyboard shortcut listeners (Cmd+K for search, Cmd+S for share, and /)
+  // Global keyboard shortcut listeners (Cmd+K / Ctrl+K and /)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Cmd+K or Ctrl+K (Search)
+      // A second modal must not open over gallery or trophy details.
+      if (document.querySelector('dialog[open]:not(#archive-search-dialog)')) return;
+      // Preserve the user's section-sharing shortcut without intercepting edits
+      // or opening a second modal over search.
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's' &&
+          !document.querySelector('dialog[open]') &&
+          !['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName) &&
+          !(e.target as HTMLElement)?.isContentEditable) {
+        e.preventDefault();
+        setShareTargetSection(activeSection);
+        setIsShareOpen(true);
+        return;
+      }
+      // Cmd+K or Ctrl+K
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         soundFx.playClickTone();
@@ -99,19 +61,11 @@ export default function App() {
         return;
       }
 
-      // Cmd+S or Ctrl+S (Share section)
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
-        e.preventDefault();
-        soundFx.playClickTone();
-        setShareTargetSection(activeSection);
-        setIsShareOpen((prev) => !prev);
-        return;
-      }
-
       // Forward slash '/' to open search when not typing in an input/textarea
       if (
         e.key === '/' &&
-        !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)
+        !['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName) &&
+        !(e.target as HTMLElement)?.isContentEditable && !e.metaKey && !e.ctrlKey && !e.altKey
       ) {
         e.preventDefault();
         soundFx.playClickTone();
@@ -123,25 +77,50 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [activeSection]);
 
-  const handleNavigate = (sectionId: string) => {
-    setActiveSection(sectionId);
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
-    if (typeof window !== 'undefined' && window.history?.replaceState) {
-      window.history.replaceState(null, '', `#${sectionId}`);
-    }
-  };
+  useEffect(() => {
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const threshold = (document.querySelector('header')?.getBoundingClientRect().height || 86) + 130;
+      const sections = Array.from(document.querySelectorAll<HTMLElement>('main section[id]'));
+      const current = sections.filter(section => section.getClientRects().length && section.getBoundingClientRect().top <= threshold).at(-1);
+      setActiveSection(current?.id || 'hero');
+    };
+    const schedule = () => { if (!frame) frame = requestAnimationFrame(update); };
+    const restoreHash = () => {
+      const id = sectionFromHash(location.hash);
+      if (id === 'pitch-visualizer' && originalLabRef.current) originalLabRef.current.open = true;
+      document.getElementById(id)?.scrollIntoView({ behavior: 'instant' });
+      schedule();
+    };
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule);
+    window.addEventListener('popstate', restoreHash);
+    window.addEventListener('hashchange', restoreHash);
+    if (location.hash) restoreHash(); else update();
+    return () => { cancelAnimationFrame(frame); window.removeEventListener('scroll', schedule); window.removeEventListener('resize', schedule); window.removeEventListener('popstate', restoreHash); window.removeEventListener('hashchange', restoreHash); };
+  }, []);
 
-  const handleOpenShare = (sectionId?: string) => {
-    soundFx.playClickTone();
-    setShareTargetSection(sectionId || activeSection);
-    setIsShareOpen(true);
+  const handleNavigate = (sectionId: string) => {
+    if (sectionId === 'pitch-visualizer' && originalLabRef.current) originalLabRef.current.open = true;
+    const element = document.getElementById(sectionId);
+    if (!element) return;
+    setActiveSection(sectionId);
+    if (location.hash !== `#${sectionId}`) history.pushState(null, '', `#${sectionId}`);
+    element.tabIndex = -1;
+    element.focus({ preventScroll: true });
+    element.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
   };
 
   const handleSyncSeason = (seasonLabel: string) => {
     setSyncSeasonQuery(seasonLabel);
+    requestSelection('statistics');
+  };
+
+  const handleOpenShare = (sectionId = activeSection) => {
+    setShareTargetSection(sectionId);
+    setIsShareOpen(true);
+    soundFx.playClickTone();
   };
 
   const handleSelectSearchResult = (item: SearchIndexItem) => {
@@ -154,21 +133,25 @@ export default function App() {
     } else if (action.type === 'season') {
       if (action.sectionId === 'statistics') {
         setSyncSeasonQuery(action.payload?.seasonQuery);
+        requestSelection('statistics');
         handleNavigate('statistics');
       } else {
         if (action.payload?.year) {
           setSelectedTimelineYear(action.payload.year);
+          requestSelection('year');
         }
         handleNavigate('career-timeline');
       }
     } else if (action.type === 'trophy') {
       if (action.payload?.trophyId) {
         setSelectedTrophyId(action.payload.trophyId);
+        requestSelection('trophy');
       }
       handleNavigate('trophies');
     } else if (action.type === 'chapter') {
       if (action.payload?.chapterId) {
         setSelectedBioChapter(action.payload.chapterId);
+        requestSelection('chapter');
       }
       handleNavigate('biography');
     } else {
@@ -176,70 +159,26 @@ export default function App() {
     }
   };
 
-  const activeMetadata = getSectionShareMetadata(activeSection);
-
   return (
     <div
       id="app"
-      className="min-h-screen flex flex-col font-sans selection:bg-amber-400 selection:text-slate-950 bg-[#070b12] text-slate-100"
+      className="site-shell min-h-screen flex flex-col"
     >
-      {/* Floating Action Controls (Achievements Jump + Quick Search + Share Section trigger) */}
-      <div className="fixed right-4 bottom-6 z-40 hidden sm:flex flex-col items-end gap-2.5">
-        {/* Quick Share Active Section Pill */}
-        <button
-          type="button"
-          onClick={() => handleOpenShare(activeSection)}
-          className="group flex items-center gap-2 px-3.5 py-2 rounded-full bg-[#0d1527]/90 hover:bg-[#121f3a] text-amber-300 border border-slate-700/80 hover:border-amber-400/60 shadow-xl backdrop-blur-md text-xs font-mono transition-all hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
-          title={`Share active section: ${activeMetadata.sectionLabel} (Cmd+S)`}
-        >
-          <Share2 className="w-3.5 h-3.5 text-amber-400 group-hover:scale-110 transition-transform" />
-          <span className="font-medium text-slate-200 group-hover:text-amber-300">
-            Share: <span className="text-amber-400 font-semibold">{activeMetadata.sectionLabel}</span>
-          </span>
-          <kbd className="px-1 py-0.2 bg-slate-900 border border-slate-700 text-[9px] rounded text-slate-400">⌘S</kbd>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            soundFx.playClickTone();
-            setIsSearchOpen(true);
-          }}
-          className="group flex items-center gap-2 px-3.5 py-2 rounded-full bg-[#0d1527]/90 hover:bg-[#121f3a] text-amber-300 border border-slate-700/80 hover:border-amber-400/60 shadow-xl backdrop-blur-md text-xs font-mono transition-all hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
-          title="Search the Archive (Cmd+K)"
-        >
-          <Search className="w-3.5 h-3.5 text-amber-400 group-hover:scale-110 transition-transform" />
-          <span className="font-medium text-slate-200 group-hover:text-amber-300">Search Archive</span>
-          <kbd className="px-1 py-0.2 bg-slate-900 border border-slate-700 text-[9px] rounded text-slate-400">⌘K</kbd>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            soundFx.playClickTone();
-            handleNavigate('achievement-timeline');
-          }}
-          className="group flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-[#0a0f1d]/90 hover:bg-[#0f172a] text-amber-300 border border-amber-400/40 shadow-2xl backdrop-blur-md text-xs font-mono transition-all hover:scale-105 hover:border-amber-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
-          title="Jump to the 6 Crown Achievements Timeline"
-        >
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <Trophy className="w-3.5 h-3.5 text-amber-400 group-hover:rotate-12 transition-transform" />
-          <span className="font-semibold tracking-wide">6 Crown Achievements</span>
-        </button>
-      </div>
-
+      <a className="skip-link" href="#main-content">Skip to main content</a>
       <Navbar
         activeSection={activeSection}
         onNavigate={handleNavigate}
         onOpenSearch={() => setIsSearchOpen(true)}
-        onOpenShare={() => handleOpenShare(activeSection)}
+        onOpenShare={() => handleOpenShare()}
       />
 
-      <main className="flex-1">
+      <main id="main-content" tabIndex={-1} className="archive-content flex-1">
         <Hero
           onNavigate={handleNavigate}
           onOpenSearch={() => setIsSearchOpen(true)}
         />
+        <p className="archive-status">An independent fan archive. Historical statistics are preserved from the original project; the coverage below refreshes separately from a credited publisher.</p>
+        <LatestCoverage />
         <AchievementTimeline
           onNavigate={handleNavigate}
           onSyncSeasonFilter={handleSyncSeason}
@@ -248,37 +187,33 @@ export default function App() {
           onNavigateToSection={handleNavigate}
           onSyncSeasonFilter={handleSyncSeason}
           externalSelectedYear={selectedTimelineYear}
+          externalRequestKey={requestKeys.year}
         />
-        <Biography externalChapterId={selectedBioChapter} />
+        <Biography externalChapterId={selectedBioChapter} externalRequestKey={requestKeys.chapter} />
         <CareerStats
           externalSeasonQuery={syncSeasonQuery}
+          externalRequestKey={requestKeys.statistics}
           onClearExternalSeason={() => setSyncSeasonQuery(undefined)}
         />
         <IconicGallery onSelectMoment={(m) => setSelectedMoment(m)} />
-        <PitchVisualizer onShareSection={() => handleOpenShare('pitch-visualizer')} />
-        <TrophyCabinet externalTrophyId={selectedTrophyId} />
+        <LegacyLab />
+        <details ref={originalLabRef} className="original-lab" onToggle={event => setOriginalLabOpen(event.currentTarget.open)}>
+          <summary>Keep exploring: the original goal simulator <span>More tactics, replays and shot controls</span></summary>
+          <PitchVisualizer active={originalLabOpen} onShareSection={() => handleOpenShare('pitch-visualizer')} />
+        </details>
+        <TrophyCabinet externalTrophyId={selectedTrophyId} externalRequestKey={requestKeys.trophy} />
         <QuotesAndTrivia />
       </main>
 
-      <Footer
-        onNavigate={handleNavigate}
-        onOpenShare={() => handleOpenShare(activeSection)}
-      />
+      <Footer onNavigate={handleNavigate} onOpenShare={() => handleOpenShare()} />
       <MomentModal moment={selectedMoment} onClose={() => setSelectedMoment(null)} />
+      <ShareModal isOpen={isShareOpen} onClose={() => setIsShareOpen(false)} currentSectionId={shareTargetSection} onNavigateToSection={handleNavigate} />
 
       {/* Global Search Overlay Palette */}
       <GlobalSearchOverlay
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
         onSelectResult={handleSelectSearchResult}
-      />
-
-      {/* Section Share Modal Dialog */}
-      <ShareModal
-        isOpen={isShareOpen}
-        onClose={() => setIsShareOpen(false)}
-        currentSectionId={shareTargetSection || activeSection}
-        onNavigateToSection={handleNavigate}
       />
     </div>
   );
