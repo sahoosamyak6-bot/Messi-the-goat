@@ -4,7 +4,7 @@ An interactive Lionel Messi fan archive built with React, TypeScript, Vite, and 
 
 ## Run locally
 
-Use Node.js 22.12+ (or a current Node.js 24 LTS release) and Bun. The repository's dependency lockfile is `bun.lock`.
+Use Node.js 22.12+ (or a current Node.js 24 LTS release) and Bun 1.4+ (tested with 1.4.4). The repository's `bun.lock` uses lockfile format 2, which requires Bun 1.4 or newer.
 
 ```sh
 bun install --frozen-lockfile
@@ -25,7 +25,13 @@ bun run build  # Production bundle in dist/
 
 `npm run check` runs all three checks once dependencies have been installed with Bun. `bun run preview` serves the production build locally.
 
-Use the frozen Bun install for reproducibility. A fresh `npm install` currently encounters an existing peer-dependency mismatch between the direct esbuild 0.25 dependency and Vite 8. Avoid using `--force` to conceal that mismatch.
+Use the frozen Bun install for reproducibility. A fresh `npm install` is also supported, but it may select newer dependency versions within the ranges in `package.json`. Keep `bun.lock` as the repository's single committed lockfile.
+
+## Vercel build settings
+
+For this static app, use the Vite framework preset, the repository root, the `build` script, and `dist` as the output directory. No server runtime or environment secrets are required.
+
+Vercel detects `bun.lock` and installs dependencies with Bun. Its Bun version must support lockfile format 2. Keep the verified-commit requirement enabled and use signed commits for deployment. Check deployment logs before changing project configuration; a canceled deployment is not necessarily a build error.
 
 ## Project layout
 
