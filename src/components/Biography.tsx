@@ -3,9 +3,21 @@ import { BIOGRAPHY_CHAPTERS, BiographyChapter } from '../data/messi-data';
 import { Calendar, MapPin, Quote, ChevronRight, CheckCircle2, Bookmark, BookOpen, Trophy } from 'lucide-react';
 import { soundFx } from '../utils/audio';
 
-export const Biography: React.FC = () => {
-  const [selectedChapterId, setSelectedChapterId] = useState<string>(BIOGRAPHY_CHAPTERS[0].id);
+interface BiographyProps {
+  externalChapterId?: string;
+}
+
+export const Biography: React.FC<BiographyProps> = ({ externalChapterId }) => {
+  const [selectedChapterId, setSelectedChapterId] = useState<string>(
+    externalChapterId || BIOGRAPHY_CHAPTERS[0].id
+  );
   const [viewMode, setViewMode] = useState<'narrative' | 'summary'>('narrative');
+
+  React.useEffect(() => {
+    if (externalChapterId) {
+      setSelectedChapterId(externalChapterId);
+    }
+  }, [externalChapterId]);
 
   const currentChapter = BIOGRAPHY_CHAPTERS.find((c) => c.id === selectedChapterId) || BIOGRAPHY_CHAPTERS[0];
 

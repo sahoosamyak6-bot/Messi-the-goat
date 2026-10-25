@@ -19,15 +19,23 @@ import { soundFx } from '../utils/audio';
 interface CareerTimelineProps {
   onSyncSeasonFilter?: (seasonLabel: string) => void;
   onNavigateToSection?: (sectionId: string) => void;
+  externalSelectedYear?: number;
 }
 
 export const CareerTimeline: React.FC<CareerTimelineProps> = ({
   onSyncSeasonFilter,
   onNavigateToSection,
+  externalSelectedYear,
 }) => {
-  const [selectedYear, setSelectedYear] = useState<number>(2022); // Default to World Cup year 2022
+  const [selectedYear, setSelectedYear] = useState<number>(externalSelectedYear || 2022); // Default to World Cup year 2022
   const [activeEraFilter, setActiveEraFilter] = useState<'all' | 'Barcelona' | 'Paris' | 'Miami'>('all');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (externalSelectedYear) {
+      setSelectedYear(externalSelectedYear);
+    }
+  }, [externalSelectedYear]);
 
   const selectedItem: TimelineYearItem =
     TIMELINE_YEAR_ITEMS.find((item) => item.year === selectedYear) || TIMELINE_YEAR_ITEMS[18];

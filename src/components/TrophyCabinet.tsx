@@ -4,10 +4,23 @@ import { TrophyItem } from '../types/messi';
 import { Trophy, Award, Search, Sparkles, Star, Calendar, Info } from 'lucide-react';
 import { soundFx } from '../utils/audio';
 
-export const TrophyCabinet: React.FC = () => {
+interface TrophyCabinetProps {
+  externalTrophyId?: string;
+}
+
+export const TrophyCabinet: React.FC<TrophyCabinetProps> = ({ externalTrophyId }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [activeTrophy, setActiveTrophy] = useState<TrophyItem | null>(null);
+
+  React.useEffect(() => {
+    if (externalTrophyId) {
+      const match = TROPHIES_DATA.find((t) => t.id === externalTrophyId);
+      if (match) {
+        setActiveTrophy(match);
+      }
+    }
+  }, [externalTrophyId]);
 
   const categories = [
     { id: 'all', label: 'All Silverware & Honors' },

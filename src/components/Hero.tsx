@@ -1,13 +1,14 @@
 import React from 'react';
-import { Trophy, Award, Target, Compass, ChevronDown, Flame, Play, Calendar } from 'lucide-react';
+import { Trophy, Award, Target, Compass, ChevronDown, Flame, Play, Calendar, Search } from 'lucide-react';
 import { soundFx } from '../utils/audio';
 
 interface HeroProps {
   onNavigate: (sectionId: string) => void;
   onOpenHighlightModal?: () => void;
+  onOpenSearch?: () => void;
 }
 
-export const Hero: React.FC<HeroProps> = ({ onNavigate, onOpenHighlightModal }) => {
+export const Hero: React.FC<HeroProps> = ({ onNavigate, onOpenHighlightModal, onOpenSearch }) => {
   const statsOverview = [
     {
       label: 'Official Career Goals',
@@ -116,6 +117,24 @@ export const Hero: React.FC<HeroProps> = ({ onNavigate, onOpenHighlightModal }) 
             <Calendar className="w-4 h-4 text-slate-400" />
             <span>Career Chronology</span>
           </button>
+
+          {onOpenSearch && (
+            <button
+              type="button"
+              onClick={() => {
+                soundFx.playClickTone();
+                onOpenSearch();
+              }}
+              className="px-5 py-3 bg-[#0d1527] hover:bg-[#121e38] text-slate-200 hover:text-amber-300 font-semibold text-sm tracking-wide rounded border border-slate-700 hover:border-amber-400/50 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 flex items-center gap-2 group shadow-sm"
+              aria-label="Open search archive"
+            >
+              <Search className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />
+              <span>Search Archive</span>
+              <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono text-slate-400 bg-slate-900 border border-slate-700 rounded">
+                ⌘K
+              </kbd>
+            </button>
+          )}
 
           <button
             type="button"
