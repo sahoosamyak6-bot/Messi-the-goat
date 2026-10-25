@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { ICONIC_GOALS_TACTICAL } from '../data/messi-data';
 import { IconicGoal } from '../types/messi';
-import { Play, Pause, RotateCcw, Volume2, Shield, Activity, Award, Compass } from 'lucide-react';
+import { Play, Pause, RotateCcw, Volume2, Shield, Activity, Award, Compass, Share2 } from 'lucide-react';
 import { soundFx } from '../utils/audio';
 
 interface PitchVisualizerProps {
   active?: boolean;
+  onShareSection?: () => void;
 }
 
-export const PitchVisualizer: React.FC<PitchVisualizerProps> = ({ active = true }) => {
+export const PitchVisualizer: React.FC<PitchVisualizerProps> = ({ active = true, onShareSection }) => {
   const [selectedGoalId, setSelectedGoalId] = useState<string>(ICONIC_GOALS_TACTICAL[0].id);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [playbackProgress, setPlaybackProgress] = useState<number>(100); // 0 to 100
@@ -137,6 +138,7 @@ export const PitchVisualizer: React.FC<PitchVisualizerProps> = ({ active = true 
           <p className="mt-3 text-slate-300 text-base sm:text-lg font-light leading-relaxed">
             Examine the geometry, dribble trajectories, defender displacements, and terminal strike velocities of Lionel Messi&rsquo;s most celebrated goals.
           </p>
+          {onShareSection && <button type="button" onClick={onShareSection} className="mt-4 inline-flex items-center gap-2 rounded-md border border-sky-300/40 px-4 py-2 text-sm text-sky-100 hover:bg-sky-100/10"><Share2 size={15} /> Share Goal Lab</button>}
         </div>
 
         {/* Goal Selector Buttons */}

@@ -16,6 +16,7 @@ import { IconicMoment } from './data/messi-data';
 import { SearchIndexItem } from './utils/searchIndex';
 import { LegacyLab } from './components/LegacyLab';
 import { LatestCoverage } from './components/LatestCoverage';
+import { ShareModal } from './components/ShareModal';
 import { soundFx } from './utils/audio';
 import { sectionFromHash } from './utils/navigation';
 
@@ -27,6 +28,8 @@ export default function App() {
   const [selectedTimelineYear, setSelectedTimelineYear] = useState<number | undefined>(undefined);
   const [selectedTrophyId, setSelectedTrophyId] = useState<string | undefined>(undefined);
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
+  const [isShareOpen, setIsShareOpen] = useState(false);
+  const [shareTargetSection, setShareTargetSection] = useState('hero');
 
   const [originalLabOpen, setOriginalLabOpen] = useState(false);
   const [requestKeys, setRequestKeys] = useState({ chapter: 0, year: 0, trophy: 0, statistics: 0 });
@@ -39,6 +42,17 @@ export default function App() {
     const handleKeyDown = (e: KeyboardEvent) => {
       // A second modal must not open over gallery or trophy details.
       if (document.querySelector('dialog[open]:not(#archive-search-dialog)')) return;
+      // Preserve the user's section-sharing shortcut without intercepting edits
+      // or opening a second modal over search.
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's' &&
+          !document.querySelector('dialog[open]') &&
+          !['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName) &&
+          !(e.target as HTMLElement)?.isContentEditable) {
+        e.preventDefault();
+        setShareTargetSection(activeSection);
+        setIsShareOpen(true);
+        return;
+      }
       // Cmd+K or Ctrl+K
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
@@ -61,7 +75,7 @@ export default function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [activeSection]);
 
   useEffect(() => {
     let frame = 0;
@@ -82,8 +96,9 @@ export default function App() {
     window.addEventListener('scroll', schedule, { passive: true });
     window.addEventListener('resize', schedule);
     window.addEventListener('popstate', restoreHash);
+    window.addEventListener('hashchange', restoreHash);
     if (location.hash) restoreHash(); else update();
-    return () => { cancelAnimationFrame(frame); window.removeEventListener('scroll', schedule); window.removeEventListener('resize', schedule); window.removeEventListener('popstate', restoreHash); };
+    return () => { cancelAnimationFrame(frame); window.removeEventListener('scroll', schedule); window.removeEventListener('resize', schedule); window.removeEventListener('popstate', restoreHash); window.removeEventListener('hashchange', restoreHash); };
   }, []);
 
   const handleNavigate = (sectionId: string) => {
@@ -100,6 +115,12 @@ export default function App() {
   const handleSyncSeason = (seasonLabel: string) => {
     setSyncSeasonQuery(seasonLabel);
     requestSelection('statistics');
+  };
+
+  const handleOpenShare = (sectionId = activeSection) => {
+    setShareTargetSection(sectionId);
+    setIsShareOpen(true);
+    soundFx.playClickTone();
   };
 
   const handleSelectSearchResult = (item: SearchIndexItem) => {
@@ -148,6 +169,7 @@ export default function App() {
         activeSection={activeSection}
         onNavigate={handleNavigate}
         onOpenSearch={() => setIsSearchOpen(true)}
+        onOpenShare={() => handleOpenShare()}
       />
 
       <main id="main-content" tabIndex={-1} className="archive-content flex-1">
@@ -177,14 +199,15 @@ export default function App() {
         <LegacyLab />
         <details ref={originalLabRef} className="original-lab" onToggle={event => setOriginalLabOpen(event.currentTarget.open)}>
           <summary>Keep exploring: the original goal simulator <span>More tactics, replays and shot controls</span></summary>
-          <PitchVisualizer active={originalLabOpen} />
+          <PitchVisualizer active={originalLabOpen} onShareSection={() => handleOpenShare('pitch-visualizer')} />
         </details>
         <TrophyCabinet externalTrophyId={selectedTrophyId} externalRequestKey={requestKeys.trophy} />
         <QuotesAndTrivia />
       </main>
 
-      <Footer onNavigate={handleNavigate} />
+      <Footer onNavigate={handleNavigate} onOpenShare={() => handleOpenShare()} />
       <MomentModal moment={selectedMoment} onClose={() => setSelectedMoment(null)} />
+      <ShareModal isOpen={isShareOpen} onClose={() => setIsShareOpen(false)} currentSectionId={shareTargetSection} onNavigateToSection={handleNavigate} />
 
       {/* Global Search Overlay Palette */}
       <GlobalSearchOverlay

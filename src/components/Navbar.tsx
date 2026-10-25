@@ -1,15 +1,15 @@
 import { isPlainPrimaryClick } from '../utils/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { Menu, Search, Volume2, VolumeX, X } from 'lucide-react';
+import { Menu, Search, Share2, Volume2, VolumeX, X } from 'lucide-react';
 import { soundFx } from '../utils/audio';
 
-interface NavbarProps { activeSection: string; onNavigate: (id: string) => void; onOpenSearch: () => void; }
+interface NavbarProps { activeSection: string; onNavigate: (id: string) => void; onOpenSearch: () => void; onOpenShare: () => void; }
 const navigation = [
   ['Coverage', 'news'], ['Biography', 'biography'], ['Timeline', 'career-timeline'], ['Statistics', 'statistics'],
   ['In pictures', 'gallery'], ['The lab', 'lab'], ['Honours', 'trophies'],
 ] as const;
 
-export function Navbar({ activeSection, onNavigate, onOpenSearch }: NavbarProps) {
+export function Navbar({ activeSection, onNavigate, onOpenSearch, onOpenShare }: NavbarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isMuted, setMuted] = useState(soundFx.getIsMuted());
   const headerRef = useRef<HTMLElement>(null);
@@ -44,6 +44,7 @@ export function Navbar({ activeSection, onNavigate, onOpenSearch }: NavbarProps)
       </nav>
       <div className="header-tools">
         <button className="icon-button search-toggle" aria-label="Search the archive" title="Search (Ctrl or Command K)" onClick={() => { setMenuOpen(false); onOpenSearch(); }}><Search size={19} /></button>
+        <button className="icon-button share-toggle" aria-label="Share archive section" title="Share current section" onClick={() => { setMenuOpen(false); onOpenShare(); }}><Share2 size={18} /></button>
         <button className="icon-button sound-toggle" aria-label={isMuted ? 'Enable sound effects' : 'Mute sound effects'} aria-pressed={!isMuted} title={isMuted ? 'Sound off' : 'Sound on'} onClick={() => { const muted = soundFx.toggleMute(); setMuted(muted); if (!muted) soundFx.playClickTone(); }}>{isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}</button>
         <button ref={toggleRef} className="menu-toggle icon-button" aria-label={menuOpen ? 'Close menu' : 'Open menu'} aria-expanded={menuOpen} aria-controls="main-navigation" onClick={() => setMenuOpen(open => !open)}>{menuOpen ? <X size={23} /> : <Menu size={23} />}</button>
       </div>

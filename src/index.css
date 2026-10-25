@@ -22,3 +22,4 @@ main section[id],#main-content{scroll-margin-top:calc(var(--site-header-height) 
 @media(max-width:380px){.hero h1{font-size:76px}.hero-visual{height:380px}.hero-star{right:7%}.hero-actions{gap:8px}.hero-actions .button{font-size:10px;padding:12px 11px}.hero-note strong{font-size:7px}.stat-item{padding-inline:3px;gap:8px}.stat-item strong{font-size:34px;min-width:37px}.stat-item>span{font-size:8px}}
 /* Comfortable touch targets without crowding the smallest header. */
 @media (min-width:381px) and (max-width:650px){.header-tools .icon-button{width:40px;min-height:44px}.header-tools .menu-toggle{margin-left:0}}
+@media(max-width:380px){.brand-name{font-size:12px}.brand-name>span{font-size:6px}.brand{gap:8px}.header-tools .icon-button{width:31px}}
