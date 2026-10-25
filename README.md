@@ -1,6 +1,6 @@
 # Messi the GOAT
 
-An interactive Lionel Messi fan archive built with React, TypeScript, Vite, and Tailwind CSS. It includes career and achievement timelines, searchable season statistics, an iconic-moments gallery, a tactical pitch visualizer, a trophy cabinet, quotes, a quiz, and a local goal-voting demo.
+An interactive Lionel Messi fan archive built with React, TypeScript, Vite, and Tailwind CSS. It preserves the original career and achievement timelines, biography, searchable statistics, trophy cabinet, quotes, quiz, local goal poll, and archive-wide search. The visual experience uses Argentina white and sky blue, Barcelona accents, real licensed Messi photographs, and a new interactive playbook lab.
 
 ## Run locally
 
@@ -42,6 +42,14 @@ Vercel detects `bun.lock` and installs dependencies with Bun. Its Bun version mu
 - `src/utils/`: calculation, animation, and sound helpers, with unit tests.
 - `src/index.css`: shared styles, navigation offsets, and reduced-motion overrides.
 
+## Interactive lab and controls
+
+The new Messi lab explores three historical plays through **illustrative**, not measured, SVG movement paths. Play, pause, replay, scrub, step between phases, and choose the playback speed. Optional auto-next runs through the remaining plays once and then stops. Nothing auto-starts on arrival.
+
+Playback pauses when the lab leaves the screen or the browser tab is hidden. Reduced-motion preferences replace animation with manual phase controls and disable auto-next. Sound effects are off by default and can be enabled from the header. The original goal simulator is preserved in an expandable section under the new lab.
+
+Archive-wide search opens with the header button, Command/Ctrl+K, or `/` outside an editable field. Search can navigate to a biography chapter, season, trophy, or gallery moment.
+
 ## Goal vote behavior
 
 The goal poll is a local demo, not a live global tally. Its starting counts are illustrative sample data. The app stores only the selected goal ID in this browser's local storage, then derives the displayed totals as the sample baseline plus at most one local vote.
@@ -58,8 +66,8 @@ A real shared poll would require a backend and server-side validation; this app 
 - Gallery details use a native modal dialog with initial focus, keyboard containment, Escape/backdrop dismissal, and focus restoration.
 - Reduced-motion preferences disable smooth section scrolling and decorative CSS animation. Poll confetti also respects that preference.
 
-For UI changes, manually check desktop and mobile navigation, browser Back/Forward, modal Tab/Shift+Tab and dismissal, plus repeated votes, reload, change, clear, and blocked-storage behavior. Unit tests and a successful build do not replace those browser checks.
+For UI changes, manually check desktop and mobile navigation, browser Back/Forward, global search, modal Tab/Shift+Tab and dismissal, image loading, lab play/pause/scrub/auto-next and interrupted playback, plus repeated votes, reload, change, clear, and blocked-storage behavior. Unit tests and a successful build do not replace those browser checks.
 
 ## Content and assets
 
-Statistics and editorial material are bundled snapshots, not a live feed. Verify new factual claims against reliable sources before updating them, and keep their dates and scope clear. Images, fonts, and highlight links may depend on external services. This is an unofficial fan project, not an official player, club, or competition site.
+Statistics and editorial material are bundled snapshots, not a live feed. Verify new factual claims against reliable sources before updating them, and keep their dates and scope clear. Five real photographs are hosted locally in `public/photos/` as optimized WebP files. Their source, creator, Creative Commons license, and adaptation notices are in `public/photos/CREDITS.md` and the visible site footer. Gallery photographs are explicitly labeled as contextual archive imagery when they do not depict the named event. Keep those notices when reusing the images; the CC BY-SA photograph retains its share-alike license. Fonts and highlight links still depend on external services. This is an unofficial fan project, not an official player, club, or competition site.
