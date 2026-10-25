@@ -76,6 +76,90 @@ export const photoAssets = {
     "height": 1369,
     "objectPosition": "50% 35%",
     "modifications": "Resized where needed and converted to WebP; layout may crop the displayed image."
+  },
+  "barcelona2007": {
+    "src": "/photos/messi-levante-2007.webp",
+    "alt": "Lionel Messi shooting near the goal during Barcelona’s match against Levante in 2007.",
+    "credit": "chantrybee; brightness adjustment by Till.niermann",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Messi_Gol_(Llevant_Barcelona_2007).jpg",
+    "license": "CC BY 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.0/",
+    "width": 1280,
+    "height": 853,
+    "objectPosition": "50% 60%",
+    "modifications": "Resized and converted to WebP; layout may crop the displayed image. Derivatives retain the source image license."
+  },
+  "barcelona2009": {
+    "src": "/photos/messi-camp-nou-2009.webp",
+    "alt": "Lionel Messi taking a corner at Camp Nou during Barcelona’s match against Recreativo Huelva in 2009.",
+    "credit": "Tsutomu Takasu",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Lionel_Messi_of_FC_Barcelona,_April_11,_2009.jpg",
+    "license": "CC BY 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.0/",
+    "width": 1200,
+    "height": 800,
+    "objectPosition": "45% 55%",
+    "modifications": "Resized and converted to WebP; layout may crop the displayed image. Derivatives retain the source image license."
+  },
+  "barcelona2012": {
+    "src": "/photos/messi-leverkusen-2012.webp",
+    "alt": "Lionel Messi in Barcelona’s striped shirt on the pitch against Bayer Leverkusen in 2012.",
+    "credit": "Shai Pal",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:FC_Barcelona_-_Bayer_04_Leverkusen,_7_mar_2012_(48).jpg",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+    "width": 1280,
+    "height": 764,
+    "objectPosition": "60% 45%",
+    "modifications": "Resized and converted to WebP; layout may crop the displayed image. Derivatives retain the source image license."
+  },
+  "argentina2014": {
+    "src": "/photos/messi-world-cup-final-2014.webp",
+    "alt": "Lionel Messi running with the ball in Argentina’s dark blue kit at the 2014 World Cup final.",
+    "credit": "Jimmy Baikovicius",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Messi_flickr2014.jpg",
+    "license": "CC BY-SA 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0/",
+    "width": 1280,
+    "height": 853,
+    "objectPosition": "50% 50%",
+    "modifications": "Resized and converted to WebP; layout may crop the displayed image. Derivatives retain the source image license."
+  },
+  "barcelona2017": {
+    "src": "/photos/messi-barcelona-psg-2017.webp",
+    "alt": "Lionel Messi seen from behind in Barcelona’s number 10 shirt during the 2017 Champions League match against Paris Saint-Germain.",
+    "credit": "Hugo Pérez Marsol",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Barça_6_-_PSG_1;_Dimecres_8_de_març_de_2017_-_33299580926.jpg",
+    "license": "CC BY 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.0/",
+    "width": 1280,
+    "height": 1217,
+    "objectPosition": "65% 45%",
+    "modifications": "Resized and converted to WebP; layout may crop the displayed image. Derivatives retain the source image license."
+  },
+  "psg2021": {
+    "src": "/photos/messi-psg-marseille-2021.webp",
+    "alt": "Lionel Messi wearing Paris Saint-Germain’s number 30 kit at the Stade Vélodrome in 2021.",
+    "credit": "Bigmatbasket",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Lionel_Messi_PSG.jpg",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "width": 776,
+    "height": 1600,
+    "objectPosition": "50% 25%",
+    "modifications": "Resized and converted to WebP; layout may crop the displayed image. Derivatives retain the source image license."
+  },
+  "miami2025": {
+    "src": "/photos/messi-inter-miami-2025.webp",
+    "alt": "Lionel Messi in Inter Miami’s black kit during the match against New York City FC in September 2025.",
+    "credit": "Bryan Berlin",
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:Lionel_Messi_NYCFC_Miami_24_Sep_2025-051.jpg",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "width": 1280,
+    "height": 853,
+    "objectPosition": "45% 35%",
+    "modifications": "Resized and converted to WebP; layout may crop the displayed image. Derivatives retain the source image license."
   }
 } satisfies Record<string, PhotoAsset>;
 

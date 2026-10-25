@@ -5,6 +5,7 @@ import { getMomentPhoto } from '../data/moment-photos';
 import { getHighlightVideo } from '../data/highlight-videos';
 import { Play, Sparkles, Eye, Search, ImageOff } from 'lucide-react';
 import { soundFx } from '../utils/audio';
+import { PhotoArchive } from './PhotoArchive';
 
 interface IconicGalleryProps {
   onSelectMoment: (moment: IconicMoment) => void;
@@ -54,10 +55,13 @@ export const IconicGallery: React.FC<IconicGalleryProps> = ({ onSelectMoment }) 
             From the teenage lob assisted by Ronaldinho to the 91st goal of 2012, the Bernabéu shirt display, and the golden World Cup lift at Lusail.
           </p>
           <p className="mt-3 text-xs text-slate-500 leading-relaxed">
-            Real archive photography sets the scene. Each image is identified below and is not presented as a photograph of the specific moment. Selected official archive videos play here, with source links retained for availability restrictions.
+            Explore the credited photo collection, then discover the iconic moments below. Moment cards use clearly labeled contextual archive imagery. Selected official archive videos play here, with source links retained for availability restrictions.
           </p>
         </div>
 
+        <PhotoArchive />
+
+        <h3 className="text-2xl font-bold text-slate-950 mb-5">Explore the iconic moments</h3>
         <div className="space-y-5 mb-10 pb-5 border-b border-sky-100">
           <div className="flex items-center gap-2 flex-wrap" aria-label="Filter iconic moments">
             {categories.map((cat) => (
