@@ -1,14 +1,20 @@
 import React, { useState } from 'react';
-import { Volume2, VolumeX, Menu, X, Trophy, Sparkles, Search } from 'lucide-react';
+import { Volume2, VolumeX, Menu, X, Trophy, Sparkles, Search, Share2 } from 'lucide-react';
 import { soundFx } from '../utils/audio';
 
 interface NavbarProps {
   activeSection: string;
   onNavigate: (sectionId: string) => void;
   onOpenSearch: () => void;
+  onOpenShare?: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ activeSection, onNavigate, onOpenSearch }) => {
+export const Navbar: React.FC<NavbarProps> = ({
+  activeSection,
+  onNavigate,
+  onOpenSearch,
+  onOpenShare,
+}) => {
   const [isMuted, setIsMuted] = useState(soundFx.getIsMuted());
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -142,6 +148,21 @@ export const Navbar: React.FC<NavbarProps> = ({ activeSection, onNavigate, onOpe
               </kbd>
             </button>
 
+            {/* Share Trigger Button */}
+            <button
+              type="button"
+              onClick={() => {
+                soundFx.playClickTone();
+                onOpenShare?.();
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0d1424] hover:bg-[#121c32] border border-slate-700/80 hover:border-amber-400/50 text-slate-300 hover:text-white transition-all text-xs font-medium shadow-sm group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
+              title="Share active section (Link & Post Snippet)"
+              aria-label="Share active section link and social snippet"
+            >
+              <Share2 className="w-3.5 h-3.5 text-amber-400 group-hover:scale-110 transition-transform" />
+              <span className="text-slate-300 group-hover:text-amber-300">Share</span>
+            </button>
+
             <button
               type="button"
               onClick={() => handleNavClick('trivia-quotes')}
@@ -178,7 +199,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeSection, onNavigate, onOpe
               soundFx.playClickTone();
               onOpenSearch();
             }}
-            className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg bg-[#0e1628] border border-amber-500/30 text-amber-300 text-xs font-medium mb-3 shadow-sm"
+            className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg bg-[#0e1628] border border-amber-500/30 text-amber-300 text-xs font-medium shadow-sm"
           >
             <div className="flex items-center gap-2.5">
               <Search className="w-4 h-4 text-amber-400" />
@@ -187,6 +208,25 @@ export const Navbar: React.FC<NavbarProps> = ({ activeSection, onNavigate, onOpe
             <kbd className="px-1.5 py-0.5 text-[10px] font-mono text-slate-400 bg-slate-900 border border-slate-800 rounded">
               ⌘K
             </kbd>
+          </button>
+
+          {/* Quick Share in Mobile Drawer */}
+          <button
+            type="button"
+            onClick={() => {
+              setMobileMenuOpen(false);
+              soundFx.playClickTone();
+              onOpenShare?.();
+            }}
+            className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg bg-[#0e1628] border border-slate-700/80 hover:border-amber-400/50 text-slate-200 text-xs font-medium mb-3 shadow-sm"
+          >
+            <div className="flex items-center gap-2.5">
+              <Share2 className="w-4 h-4 text-amber-400" />
+              <span>Share Active Section & Snippet</span>
+            </div>
+            <span className="text-[10px] font-mono text-amber-400/90 uppercase px-1.5 py-0.5 bg-slate-900 rounded border border-slate-800">
+              Share
+            </span>
           </button>
 
           {navItems.map((item) => {

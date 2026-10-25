@@ -1,12 +1,13 @@
 import React from 'react';
-import { Trophy, Heart, ArrowUp } from 'lucide-react';
+import { Trophy, Heart, ArrowUp, Share2 } from 'lucide-react';
 import { soundFx } from '../utils/audio';
 
 interface FooterProps {
   onNavigate: (sectionId: string) => void;
+  onOpenShare?: () => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
+export const Footer: React.FC<FooterProps> = ({ onNavigate, onOpenShare }) => {
   const scrollToTop = () => {
     soundFx.playClickTone();
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -89,6 +90,19 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
               >
                 Trivia & Quotes
               </button>
+              {onOpenShare && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    soundFx.playClickTone();
+                    onOpenShare();
+                  }}
+                  className="text-left text-amber-400 hover:text-amber-300 font-medium transition-colors flex items-center gap-1.5"
+                >
+                  <Share2 className="w-3 h-3 text-amber-400" />
+                  <span>Share Section Link</span>
+                </button>
+              )}
             </div>
           </div>
 

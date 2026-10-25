@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { ICONIC_GOALS_TACTICAL } from '../data/messi-data';
 import { IconicGoal } from '../types/messi';
-import { Play, Pause, RotateCcw, Volume2, Shield, Activity, Award, Compass } from 'lucide-react';
+import { Play, Pause, RotateCcw, Volume2, Shield, Activity, Award, Compass, Share2 } from 'lucide-react';
 import { soundFx } from '../utils/audio';
 
-export const PitchVisualizer: React.FC = () => {
+interface PitchVisualizerProps {
+  onShareSection?: () => void;
+}
+
+export const PitchVisualizer: React.FC<PitchVisualizerProps> = ({ onShareSection }) => {
   const [selectedGoalId, setSelectedGoalId] = useState<string>(ICONIC_GOALS_TACTICAL[0].id);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [playbackProgress, setPlaybackProgress] = useState<number>(100); // 0 to 100
@@ -91,17 +95,34 @@ export const PitchVisualizer: React.FC = () => {
     <section id="pitch-visualizer" className="py-20 bg-[#060a12] border-b border-slate-800/80">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="max-w-3xl mb-10">
-          <div className="flex items-center gap-2 text-xs font-mono tracking-widest text-amber-400 uppercase mb-3">
-            <Compass className="w-4 h-4 text-amber-400 inline" />
-            <span>Interactive Tactical Lab</span>
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+          <div className="max-w-3xl">
+            <div className="flex items-center gap-2 text-xs font-mono tracking-widest text-amber-400 uppercase mb-3">
+              <Compass className="w-4 h-4 text-amber-400 inline" />
+              <span>Interactive Tactical Lab</span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold font-serif-prestige tracking-tight text-white uppercase">
+              The Pitch Visualizer
+            </h2>
+            <p className="mt-3 text-slate-300 text-base sm:text-lg font-light leading-relaxed">
+              Examine the geometry, dribble trajectories, defender displacements, and terminal strike velocities of Lionel Messi&rsquo;s most celebrated goals.
+            </p>
           </div>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold font-serif-prestige tracking-tight text-white uppercase">
-            The Pitch Visualizer
-          </h2>
-          <p className="mt-3 text-slate-300 text-base sm:text-lg font-light leading-relaxed">
-            Examine the geometry, dribble trajectories, defender displacements, and terminal strike velocities of Lionel Messi&rsquo;s most celebrated goals.
-          </p>
+
+          {onShareSection && (
+            <button
+              type="button"
+              onClick={() => {
+                soundFx.playClickTone();
+                onShareSection();
+              }}
+              className="self-start md:self-end flex items-center gap-2 px-3.5 py-2 rounded-lg bg-[#0d1424] hover:bg-[#121c32] border border-slate-700/80 hover:border-amber-400/50 text-slate-300 hover:text-white transition-all text-xs font-medium shadow-sm group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
+              title="Share Pitch Visualizer & Goal Lab link"
+            >
+              <Share2 className="w-3.5 h-3.5 text-amber-400 group-hover:scale-110 transition-transform" />
+              <span>Share Goal Lab</span>
+            </button>
+          )}
         </div>
 
         {/* Goal Selector Buttons */}

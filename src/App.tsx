@@ -14,8 +14,22 @@ import { MomentModal } from './components/MomentModal';
 import { GlobalSearchOverlay } from './components/GlobalSearchOverlay';
 import { IconicMoment } from './data/messi-data';
 import { SearchIndexItem } from './utils/searchIndex';
-import { Trophy, Search } from 'lucide-react';
+import { Trophy, Search, Share2 } from 'lucide-react';
 import { soundFx } from './utils/audio';
+import { ShareModal } from './components/ShareModal';
+import { getSectionShareMetadata } from './utils/share-helper';
+
+const SECTION_IDS = [
+  'hero',
+  'achievement-timeline',
+  'career-timeline',
+  'biography',
+  'statistics',
+  'gallery',
+  'pitch-visualizer',
+  'trophies',
+  'trivia-quotes',
+];
 
 export default function App() {
   const [activeSection, setActiveSection] = useState<string>('hero');
@@ -25,15 +39,72 @@ export default function App() {
   const [selectedTimelineYear, setSelectedTimelineYear] = useState<number | undefined>(undefined);
   const [selectedTrophyId, setSelectedTrophyId] = useState<string | undefined>(undefined);
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
+  const [isShareOpen, setIsShareOpen] = useState<boolean>(false);
+  const [shareTargetSection, setShareTargetSection] = useState<string>('hero');
 
-  // Global keyboard shortcut listeners (Cmd+K / Ctrl+K and /)
+  // Deep linking: read window.location.hash on initial mount & hashchange
+  useEffect(() => {
+    const handleHash = () => {
+      const hash = window.location.hash.replace('#', '');
+      if (hash && SECTION_IDS.includes(hash)) {
+        setActiveSection(hash);
+        const element = document.getElementById(hash);
+        if (element) {
+          setTimeout(() => {
+            element.scrollIntoView({ behavior: 'smooth' });
+          }, 150);
+        }
+      }
+    };
+
+    handleHash();
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
+  }, []);
+
+  // IntersectionObserver to observe visible section on scroll
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('IntersectionObserver' in window)) return;
+
+    const handleIntersect: IntersectionObserverCallback = (entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.2) {
+          setActiveSection(entry.target.id);
+        }
+      }
+    };
+
+    const observer = new IntersectionObserver(handleIntersect, {
+      root: null,
+      rootMargin: '-20% 0px -40% 0px',
+      threshold: [0.2, 0.4],
+    });
+
+    SECTION_IDS.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  // Global keyboard shortcut listeners (Cmd+K for search, Cmd+S for share, and /)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Cmd+K or Ctrl+K
+      // Cmd+K or Ctrl+K (Search)
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         soundFx.playClickTone();
         setIsSearchOpen((prev) => !prev);
+        return;
+      }
+
+      // Cmd+S or Ctrl+S (Share section)
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        soundFx.playClickTone();
+        setShareTargetSection(activeSection);
+        setIsShareOpen((prev) => !prev);
         return;
       }
 
@@ -50,7 +121,7 @@ export default function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [activeSection]);
 
   const handleNavigate = (sectionId: string) => {
     setActiveSection(sectionId);
@@ -58,6 +129,15 @@ export default function App() {
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
     }
+    if (typeof window !== 'undefined' && window.history?.replaceState) {
+      window.history.replaceState(null, '', `#${sectionId}`);
+    }
+  };
+
+  const handleOpenShare = (sectionId?: string) => {
+    soundFx.playClickTone();
+    setShareTargetSection(sectionId || activeSection);
+    setIsShareOpen(true);
   };
 
   const handleSyncSeason = (seasonLabel: string) => {
@@ -96,13 +176,29 @@ export default function App() {
     }
   };
 
+  const activeMetadata = getSectionShareMetadata(activeSection);
+
   return (
     <div
       id="app"
       className="min-h-screen flex flex-col font-sans selection:bg-amber-400 selection:text-slate-950 bg-[#070b12] text-slate-100"
     >
-      {/* Floating Action Controls (Achievements Jump + Quick Search trigger) */}
+      {/* Floating Action Controls (Achievements Jump + Quick Search + Share Section trigger) */}
       <div className="fixed right-4 bottom-6 z-40 hidden sm:flex flex-col items-end gap-2.5">
+        {/* Quick Share Active Section Pill */}
+        <button
+          type="button"
+          onClick={() => handleOpenShare(activeSection)}
+          className="group flex items-center gap-2 px-3.5 py-2 rounded-full bg-[#0d1527]/90 hover:bg-[#121f3a] text-amber-300 border border-slate-700/80 hover:border-amber-400/60 shadow-xl backdrop-blur-md text-xs font-mono transition-all hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
+          title={`Share active section: ${activeMetadata.sectionLabel} (Cmd+S)`}
+        >
+          <Share2 className="w-3.5 h-3.5 text-amber-400 group-hover:scale-110 transition-transform" />
+          <span className="font-medium text-slate-200 group-hover:text-amber-300">
+            Share: <span className="text-amber-400 font-semibold">{activeMetadata.sectionLabel}</span>
+          </span>
+          <kbd className="px-1 py-0.2 bg-slate-900 border border-slate-700 text-[9px] rounded text-slate-400">⌘S</kbd>
+        </button>
+
         <button
           type="button"
           onClick={() => {
@@ -136,6 +232,7 @@ export default function App() {
         activeSection={activeSection}
         onNavigate={handleNavigate}
         onOpenSearch={() => setIsSearchOpen(true)}
+        onOpenShare={() => handleOpenShare(activeSection)}
       />
 
       <main className="flex-1">
@@ -158,12 +255,15 @@ export default function App() {
           onClearExternalSeason={() => setSyncSeasonQuery(undefined)}
         />
         <IconicGallery onSelectMoment={(m) => setSelectedMoment(m)} />
-        <PitchVisualizer />
+        <PitchVisualizer onShareSection={() => handleOpenShare('pitch-visualizer')} />
         <TrophyCabinet externalTrophyId={selectedTrophyId} />
         <QuotesAndTrivia />
       </main>
 
-      <Footer onNavigate={handleNavigate} />
+      <Footer
+        onNavigate={handleNavigate}
+        onOpenShare={() => handleOpenShare(activeSection)}
+      />
       <MomentModal moment={selectedMoment} onClose={() => setSelectedMoment(null)} />
 
       {/* Global Search Overlay Palette */}
@@ -171,6 +271,14 @@ export default function App() {
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
         onSelectResult={handleSelectSearchResult}
+      />
+
+      {/* Section Share Modal Dialog */}
+      <ShareModal
+        isOpen={isShareOpen}
+        onClose={() => setIsShareOpen(false)}
+        currentSectionId={shareTargetSection || activeSection}
+        onNavigateToSection={handleNavigate}
       />
     </div>
   );
