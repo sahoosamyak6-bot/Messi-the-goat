@@ -1,0 +1,4 @@
+# Require the repository owner's review for collaborator changes.
+* @sahoosamyak6-bot
+# Protect review ownership and other GitHub configuration.
+/.github/ @sahoosamyak6-bot
