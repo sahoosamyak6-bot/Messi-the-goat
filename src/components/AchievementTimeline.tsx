@@ -3,6 +3,12 @@ import { ACHIEVEMENT_TIMELINE_ITEMS } from '../data/messi-data';
 import { sortAchievementsChronologically } from '../utils/stats-calculator';
 import { calculateStaggerDelay, getRevealStyle } from '../utils/animation-helpers';
 import {
+  calculateScrollTrophyCount,
+  calculateSectionScrollProgress,
+  getTrophyTierLabel,
+  TOTAL_MAJOR_TROPHIES,
+} from '../utils/trophy-counter';
+import {
   Trophy,
   Award,
   Target,
@@ -45,6 +51,27 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
   const [visibleItems, setVisibleItems] = useState<Record<string, boolean>>({});
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [animationKey, setAnimationKey] = useState(0);
+
+  // Persistent animated trophy counter state
+  const [scrollProgress, setScrollProgress] = useState<number>(0);
+  const [targetTrophyCount, setTargetTrophyCount] = useState<number>(0);
+  const [displayedTrophyCount, setDisplayedTrophyCount] = useState<number>(0);
+  const [headerHeight, setHeaderHeight] = useState<number>(98);
+  const lastSoundTickRef = useRef<number>(0);
+
+  // Keep sticky top offset synchronized with dynamic header height
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const updateHeaderHeight = () => {
+      const headerEl = document.querySelector('header');
+      if (headerEl) {
+        setHeaderHeight(headerEl.offsetHeight);
+      }
+    };
+    updateHeaderHeight();
+    window.addEventListener('resize', updateHeaderHeight);
+    return () => window.removeEventListener('resize', updateHeaderHeight);
+  }, []);
 
   // Detect user preference for reduced motion
   useEffect(() => {
@@ -121,6 +148,79 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
       itemObserver.disconnect();
     };
   }, [animationKey]);
+
+  // Measure section scroll progress and update target trophy count
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    let ticking = false;
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          if (sectionRef.current) {
+            const rect = sectionRef.current.getBoundingClientRect();
+            const sectionTop = window.scrollY + rect.top;
+            const sectionHeight = rect.height;
+            const headerEl = document.querySelector('header');
+            const navOffset = headerEl ? headerEl.offsetHeight : headerHeight;
+            const progress = calculateSectionScrollProgress(
+              window.scrollY,
+              sectionTop,
+              sectionHeight,
+              window.innerHeight,
+              navOffset
+            );
+            setScrollProgress(progress);
+
+            // Compute trophy count (0 to 46) based on scroll depth through the section
+            const count = calculateScrollTrophyCount(progress, TOTAL_MAJOR_TROPHIES, 0);
+            setTargetTrophyCount(count);
+          }
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [headerHeight]);
+
+  // Smooth number ticker animation: interpolate displayedTrophyCount to targetTrophyCount
+  useEffect(() => {
+    if (prefersReducedMotion) {
+      setDisplayedTrophyCount(targetTrophyCount);
+      return;
+    }
+
+    if (displayedTrophyCount === targetTrophyCount) return;
+
+    let animId: number;
+    const step = () => {
+      setDisplayedTrophyCount((prev) => {
+        if (prev === targetTrophyCount) return prev;
+        const diff = targetTrophyCount - prev;
+        // Faster step if far, step by 1 if close
+        const stepSize = Math.abs(diff) > 4 ? Math.round(diff * 0.35) : Math.sign(diff);
+        const next = prev + stepSize;
+
+        if (Math.abs(next - lastSoundTickRef.current) >= 10 || next === TOTAL_MAJOR_TROPHIES) {
+          lastSoundTickRef.current = next;
+        }
+
+        if ((diff > 0 && next >= targetTrophyCount) || (diff < 0 && next <= targetTrophyCount)) {
+          return targetTrophyCount;
+        }
+        return next;
+      });
+      animId = requestAnimationFrame(step);
+    };
+
+    animId = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(animId);
+  }, [targetTrophyCount, prefersReducedMotion]);
 
   // Replay animation handler
   const handleReplayAnimation = () => {
@@ -252,17 +352,92 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
     return items;
   }, [sortDirection, selectedCategory]);
 
+  const tierInfo = getTrophyTierLabel(displayedTrophyCount);
+
   return (
     <section
       ref={sectionRef}
       id="achievement-timeline"
-      className="scroll-mt-24 py-16 sm:py-24 bg-[#060912] border-b border-slate-800/80 relative overflow-hidden"
+      className="scroll-mt-24 pb-16 sm:pb-24 pt-0 bg-[#060912] border-b border-slate-800/80 relative"
     >
       {/* Background ambient lighting */}
-      <div className="absolute inset-0 pointer-events-none">
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-1/4 right-1/4 w-[600px] h-[400px] bg-amber-500/5 rounded-full blur-3xl" />
         <div className="absolute bottom-1/3 left-1/4 w-[500px] h-[350px] bg-sky-500/5 rounded-full blur-3xl" />
         <div className="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:28px_28px] opacity-20" />
+      </div>
+
+      {/* Persistent Animated Major Silverware Counter Bar */}
+      <div
+        role="region"
+        aria-label="Persistent Major Trophies Counter"
+        style={{ top: `${headerHeight}px` }}
+        className="sticky z-30 w-full bg-[#070b14]/95 backdrop-blur-md border-b border-amber-500/30 shadow-xl shadow-black/40 py-2.5 px-4 sm:px-6 mb-10 transition-[top] duration-200"
+      >
+        <div className="max-w-6xl mx-auto flex items-center justify-between gap-3 sm:gap-4 flex-wrap sm:flex-nowrap">
+          {/* Left: Trophy Icon & Live Animated Counter */}
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-amber-400/10 border border-amber-400/40 flex items-center justify-center text-amber-400 shadow-sm shrink-0">
+              <Trophy className="w-4 h-4 text-amber-400" />
+            </div>
+
+            <div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-xl sm:text-2xl font-black font-serif-prestige text-amber-400 tabular-nums tracking-tight transition-transform duration-150 inline-block">
+                  {displayedTrophyCount}
+                </span>
+                <span className="text-xs sm:text-sm font-mono font-medium text-slate-400">
+                  / 46
+                </span>
+                <span className="text-xs font-mono uppercase tracking-wider text-slate-200 font-semibold ml-1">
+                  Major Trophies Won
+                </span>
+              </div>
+              <div className="text-[10px] sm:text-[11px] font-mono text-slate-400 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                <span>Scroll updates count in real time</span>
+                <span className="text-slate-600 hidden md:inline">·</span>
+                <span className="text-amber-300/90 hidden md:inline font-medium">{tierInfo.tagline}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Right: Progress Indicator & Quick Summit Jump */}
+          <div className="flex items-center gap-3 ml-auto sm:ml-0">
+            <div className="hidden lg:flex flex-col items-end">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400">
+                Timeline Progress
+              </span>
+              <span className="text-xs font-mono font-bold text-amber-300 tabular-nums">
+                {Math.round((displayedTrophyCount / 46) * 100)}%
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                soundFx.playCelebrationChime();
+                const summitEl = document.getElementById('ach-46-trophies');
+                if (summitEl) {
+                  summitEl.scrollIntoView({ behavior: 'smooth' });
+                }
+              }}
+              className="px-3 py-1.5 rounded-lg bg-[#0e172a] hover:bg-[#1e293b] border border-amber-400/40 hover:border-amber-400 text-amber-300 text-xs font-mono font-medium transition-all flex items-center gap-1.5 shadow-sm hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
+              title="Jump to the 46-trophy world record milestone"
+            >
+              <Trophy className="w-3.5 h-3.5 text-amber-400" />
+              <span>Summit: 46 Titles</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Slim Animated Progress Bar at bottom of sticky counter */}
+        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-slate-800">
+          <div
+            className="h-full bg-gradient-to-r from-amber-500 via-amber-400 to-sky-400 transition-all duration-200 ease-out"
+            style={{ width: `${(displayedTrophyCount / 46) * 100}%` }}
+          />
+        </div>
       </div>
 
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -414,7 +589,7 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
                   itemRefs.current[item.id] = el;
                 }}
                 style={revealStyle}
-                className="relative group transition-all"
+                className="scroll-mt-40 relative group transition-all"
               >
                 {/* Timeline Node Marker accurately centered on the spine with pulse on reveal */}
                 <div
