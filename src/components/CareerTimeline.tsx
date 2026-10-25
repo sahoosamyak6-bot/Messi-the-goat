@@ -15,6 +15,7 @@ import {
   Star,
 } from 'lucide-react';
 import { soundFx } from '../utils/audio';
+import { filterMilestones, formatMilestoneDate, filterCareerYears, resolveCareerYear, type CareerEra, type MilestoneKind } from '../data/career-milestones';
 
 interface CareerTimelineProps {
   onSyncSeasonFilter?: (seasonLabel: string) => void;
@@ -29,12 +30,14 @@ export const CareerTimeline: React.FC<CareerTimelineProps> = ({
   externalSelectedYear,
   externalRequestKey,
 }) => {
-  const [selectedYear, setSelectedYear] = useState<number>(externalSelectedYear || 2022); // Default to World Cup year 2022
-  const [activeEraFilter, setActiveEraFilter] = useState<'all' | 'Barcelona' | 'Paris' | 'Miami'>('all');
+  const [selectedYear, setSelectedYear] = useState<number>(() => resolveCareerYear(TIMELINE_YEAR_ITEMS, externalSelectedYear ?? 2022));
+  const [activeEraFilter, setActiveEraFilter] = useState<CareerEra>('all');
+  const [milestoneKind, setMilestoneKind] = useState<MilestoneKind | 'All'>('All');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (externalSelectedYear) {
+    if (externalSelectedYear && TIMELINE_YEAR_ITEMS.some(item => item.year === externalSelectedYear)) {
+      setActiveEraFilter('all');
       setSelectedYear(externalSelectedYear);
     }
   }, [externalSelectedYear, externalRequestKey]);
@@ -42,13 +45,8 @@ export const CareerTimeline: React.FC<CareerTimelineProps> = ({
   const selectedItem: TimelineYearItem =
     TIMELINE_YEAR_ITEMS.find((item) => item.year === selectedYear) || TIMELINE_YEAR_ITEMS[18];
 
-  const filteredYears = TIMELINE_YEAR_ITEMS.filter((item) => {
-    if (activeEraFilter === 'all') return true;
-    if (activeEraFilter === 'Barcelona') return item.club === 'FC Barcelona';
-    if (activeEraFilter === 'Paris') return item.club === 'Paris Saint-Germain';
-    if (activeEraFilter === 'Miami') return item.club === 'Inter Miami CF';
-    return true;
-  });
+  const filteredYears = filterCareerYears(TIMELINE_YEAR_ITEMS, activeEraFilter);
+  const selectedIndex = filteredYears.findIndex(item => item.year === selectedYear);
 
   const handleSelectYear = (year: number) => {
     soundFx.playClickTone();
@@ -56,18 +54,18 @@ export const CareerTimeline: React.FC<CareerTimelineProps> = ({
   };
 
   const handlePrevYear = () => {
-    const currentIndex = TIMELINE_YEAR_ITEMS.findIndex((item) => item.year === selectedYear);
+    const currentIndex = filteredYears.findIndex((item) => item.year === selectedYear);
     if (currentIndex > 0) {
       soundFx.playClickTone();
-      setSelectedYear(TIMELINE_YEAR_ITEMS[currentIndex - 1].year);
+      setSelectedYear(filteredYears[currentIndex - 1].year);
     }
   };
 
   const handleNextYear = () => {
-    const currentIndex = TIMELINE_YEAR_ITEMS.findIndex((item) => item.year === selectedYear);
-    if (currentIndex < TIMELINE_YEAR_ITEMS.length - 1) {
+    const currentIndex = filteredYears.findIndex((item) => item.year === selectedYear);
+    if (currentIndex >= 0 && currentIndex < filteredYears.length - 1) {
       soundFx.playClickTone();
-      setSelectedYear(TIMELINE_YEAR_ITEMS[currentIndex + 1].year);
+      setSelectedYear(filteredYears[currentIndex + 1].year);
     }
   };
 
@@ -108,14 +106,14 @@ export const CareerTimeline: React.FC<CareerTimelineProps> = ({
               The Career Timeline
             </h2>
             <p className="mt-3 text-slate-600 text-base sm:text-lg font-normal max-w-2xl leading-relaxed">
-              Click any year across Messi&rsquo;s 21-season professional journey to instantly inspect matching biography chapters, official match records, and trophy captures.
+              Explore the historical season archive, then open the dated milestones for source-backed club moves, trophies and memorable matches. Season summaries are archive snapshots, not live career totals.
             </p>
           </div>
 
           {/* Quick Era Filter Segmented Controls */}
           <div className="flex flex-wrap items-center gap-1.5 max-w-full bg-white p-1.5 rounded-2xl border border-sky-100 self-start md:self-end">
             {[
-              { id: 'all', label: 'All 21 Years' },
+              { id: 'all', label: 'All archive years' },
               { id: 'Barcelona', label: 'Barcelona (04–21)' },
               { id: 'Paris', label: 'PSG (21–23)' },
               { id: 'Miami', label: 'Miami (23–25)' },
@@ -125,7 +123,9 @@ export const CareerTimeline: React.FC<CareerTimelineProps> = ({
                 type="button"
                 onClick={() => {
                   soundFx.playClickTone();
-                  setActiveEraFilter(tab.id as typeof activeEraFilter);
+                  const era = tab.id as CareerEra;
+                  setActiveEraFilter(era);
+                  setSelectedYear(year => resolveCareerYear(filterCareerYears(TIMELINE_YEAR_ITEMS, era), year));
                 }}
                 aria-pressed={activeEraFilter === tab.id}
                 className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
@@ -140,6 +140,24 @@ export const CareerTimeline: React.FC<CareerTimelineProps> = ({
           </div>
         </div>
 
+        <details className="mb-8 rounded-2xl border border-sky-200 bg-white p-5 sm:p-6">
+          <summary className="cursor-pointer text-lg font-bold text-[#154284]">Dated milestones · clubs, trophies &amp; matches</summary>
+          <p className="mt-3 text-sm leading-relaxed text-slate-600">Selected highlights from 2004–2023, with primary sources. Dates refer to the event at its location, not the publication date or the season label below. This is not a complete trophy tally.</p>
+          <div className="my-4 flex flex-wrap gap-2" aria-label="Milestone categories">
+            {(['All', 'Clubs', 'Trophies', 'Matches'] as const).map(kind => <button key={kind} type="button" aria-pressed={milestoneKind === kind} onClick={() => setMilestoneKind(kind)} className={`rounded-lg border px-4 py-2 text-sm font-semibold ${milestoneKind === kind ? 'bg-[#154284] text-white border-[#154284]' : 'bg-sky-50 text-slate-700 border-sky-100'}`}>{kind}</button>)}
+          </div>
+          <p className="sr-only" role="status">{filterMilestones(milestoneKind).length} {milestoneKind.toLowerCase()} milestones shown.</p>
+          <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {filterMilestones(milestoneKind).map(item => <li key={item.id} className="rounded-xl border border-sky-100 border-l-4 border-l-[#a50044] bg-sky-50/60 p-4">
+              <time dateTime={item.date} className="text-xs font-mono font-semibold text-[#154284]">{formatMilestoneDate(item.date)}</time>
+              <h3 className="mt-2 font-bold text-slate-950">{item.title}</h3>
+              <p className="mt-1 text-xs font-semibold text-sky-800">{item.team} · {item.kinds.join(' / ')}</p>
+              <p className="my-3 text-sm leading-relaxed text-slate-600">{item.summary}</p>
+              <a href={item.source.url} target="_blank" rel="noreferrer" className="text-xs font-semibold text-[#154284] underline underline-offset-4">Source: {item.source.label}<span className="sr-only"> (opens in a new tab)</span></a>
+            </li>)}
+          </ol>
+        </details>
+
         {/* Year Rail Slider with Horizontal Scroll */}
         <div className="relative mb-10 bg-white p-3 rounded-2xl border border-sky-100 shadow-sm shadow-sky-900/5">
           {/* Timeline track navigation arrows */}
@@ -152,7 +170,7 @@ export const CareerTimeline: React.FC<CareerTimelineProps> = ({
               <button
                 type="button"
                 onClick={handlePrevYear}
-                disabled={selectedYear === TIMELINE_YEAR_ITEMS[0].year}
+                disabled={selectedIndex <= 0}
                 aria-label="Previous season"
                 className="p-1 rounded-lg bg-sky-100 hover:bg-sky-100 disabled:opacity-30 disabled:cursor-not-allowed text-slate-600 transition-colors"
               >
@@ -162,7 +180,7 @@ export const CareerTimeline: React.FC<CareerTimelineProps> = ({
               <button
                 type="button"
                 onClick={handleNextYear}
-                disabled={selectedYear === TIMELINE_YEAR_ITEMS[TIMELINE_YEAR_ITEMS.length - 1].year}
+                disabled={selectedIndex < 0 || selectedIndex === filteredYears.length - 1}
                 aria-label="Next season"
                 className="p-1 rounded-lg bg-sky-100 hover:bg-sky-100 disabled:opacity-30 disabled:cursor-not-allowed text-slate-600 transition-colors"
               >
@@ -288,7 +306,7 @@ export const CareerTimeline: React.FC<CareerTimelineProps> = ({
             <div className="bg-white p-6 rounded-2xl border border-sky-100 shadow-sm">
               <div className="flex items-center justify-between border-b border-sky-100 pb-3 mb-4">
                 <span className="text-xs font-mono uppercase tracking-wider text-slate-600">
-                  {selectedItem.seasonLabel} Official Statistics
+                  {selectedItem.seasonLabel} Archive Statistics
                 </span>
                 <span className="text-xs font-mono text-[#154284] font-bold">
                   {selectedItem.stats.ga} Goal Contributions
@@ -326,7 +344,7 @@ export const CareerTimeline: React.FC<CareerTimelineProps> = ({
               <div>
                 <span className="text-xs font-mono uppercase tracking-wider text-slate-600 flex items-center gap-1.5 mb-2.5">
                   <Trophy className="w-3.5 h-3.5 text-[#154284]" />
-                  Silverware & Honors in {selectedItem.year}
+                  Silverware & Honors · {selectedItem.seasonLabel}
                 </span>
 
                 {selectedItem.trophiesWon.length > 0 ? (
@@ -376,7 +394,7 @@ export const CareerTimeline: React.FC<CareerTimelineProps> = ({
                 }}
                 className="w-full flex items-center justify-between p-3 rounded-lg bg-sky-50 hover:bg-sky-100 text-xs font-medium text-sky-800 transition-colors border border-sky-100"
               >
-                <span>View {selectedItem.year} Iconic Match Clips</span>
+                <span>Explore the Iconic Moments Gallery</span>
                 <ArrowRight className="w-4 h-4 text-sky-700" />
               </button>
             </div>

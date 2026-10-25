@@ -1,3 +1,4 @@
+import { photoSrcSet } from '../data/photo-assets';
 import React, { useEffect, useId, useRef, useState } from 'react';
 import { IconicMoment } from '../data/messi-data';
 import { getMomentPhoto } from '../data/moment-photos';
@@ -118,6 +119,8 @@ export const MomentModal: React.FC<MomentModalProps> = ({ moment, onClose }) => 
             ) : (
               <img
                 src={photo.src}
+                        srcSet={photoSrcSet(photo)}
+                        sizes="(max-width: 768px) calc(100vw - 32px), 736px"
                 alt={photo.alt}
                 width={photo.width}
                 height={photo.height}
