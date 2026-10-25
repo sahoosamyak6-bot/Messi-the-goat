@@ -164,48 +164,48 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
     switch (category) {
       case 'world_cup':
         return {
-          border: 'border-amber-400',
-          bg: 'bg-amber-400/10',
-          text: 'text-amber-300',
-          label: 'text-amber-400',
-          glow: 'shadow-amber-500/10',
-          nodeGlow: 'shadow-[0_0_15px_rgba(251,191,36,0.35)]',
+          border: 'border-sky-400',
+          bg: 'bg-sky-50',
+          text: 'text-[#154284]',
+          label: 'text-[#154284]',
+          glow: 'shadow-sky-900/5',
+          nodeGlow: 'shadow-[0_3px_14px_rgba(21,66,132,0.12)]',
         };
       case 'international':
         return {
           border: 'border-sky-400',
           bg: 'bg-sky-400/10',
-          text: 'text-sky-300',
-          label: 'text-sky-400',
+          text: 'text-sky-800',
+          label: 'text-sky-700',
           glow: 'shadow-sky-500/10',
-          nodeGlow: 'shadow-[0_0_15px_rgba(56,189,248,0.35)]',
+          nodeGlow: 'shadow-[0_3px_14px_rgba(117,170,219,0.18)]',
         };
       case 'individual':
         return {
-          border: 'border-amber-300',
-          bg: 'bg-amber-300/10',
-          text: 'text-amber-200',
-          label: 'text-amber-300',
-          glow: 'shadow-amber-400/10',
-          nodeGlow: 'shadow-[0_0_15px_rgba(252,211,77,0.35)]',
+          border: 'border-blue-300',
+          bg: 'bg-sky-50',
+          text: 'text-blue-900',
+          label: 'text-[#154284]',
+          glow: 'shadow-sky-900/5',
+          nodeGlow: 'shadow-[0_3px_14px_rgba(21,66,132,0.12)]',
         };
       case 'club_milestone':
         return {
-          border: 'border-pink-400',
+          border: 'border-rose-300',
           bg: 'bg-pink-400/10',
-          text: 'text-pink-300',
-          label: 'text-pink-400',
+          text: 'text-[#a50044]',
+          label: 'text-[#a50044]',
           glow: 'shadow-pink-500/10',
-          nodeGlow: 'shadow-[0_0_15px_rgba(244,114,182,0.35)]',
+          nodeGlow: 'shadow-[0_3px_14px_rgba(165,0,68,0.12)]',
         };
       default:
         return {
-          border: 'border-emerald-400',
+          border: 'border-emerald-300',
           bg: 'bg-emerald-400/10',
-          text: 'text-emerald-300',
-          label: 'text-emerald-400',
+          text: 'text-emerald-800',
+          label: 'text-emerald-700',
           glow: 'shadow-emerald-500/10',
-          nodeGlow: 'shadow-[0_0_15px_rgba(52,211,153,0.35)]',
+          nodeGlow: 'shadow-[0_3px_14px_rgba(52,211,153,0.12)]',
         };
     }
   };
@@ -256,13 +256,13 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
     <section
       ref={sectionRef}
       id="achievement-timeline"
-      className="scroll-mt-24 py-16 sm:py-24 bg-[#060912] border-b border-slate-800/80 relative overflow-hidden"
+      className="archive-content scroll-mt-24 py-16 sm:py-24 bg-sky-50/70 border-b border-sky-100 relative overflow-hidden"
     >
       {/* Background ambient lighting */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/4 right-1/4 w-[600px] h-[400px] bg-amber-500/5 rounded-full blur-3xl" />
+        <div className="absolute top-1/4 right-1/4 w-[600px] h-[400px] bg-sky-200/20 rounded-full blur-3xl" />
         <div className="absolute bottom-1/3 left-1/4 w-[500px] h-[350px] bg-sky-500/5 rounded-full blur-3xl" />
-        <div className="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:28px_28px] opacity-20" />
+        <div className="absolute inset-0 bg-[radial-gradient(#75aadb_1px,transparent_1px)] [background-size:28px_28px] opacity-20" />
       </div>
 
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -275,34 +275,34 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
           }`}
         >
           <div>
-            <div className="flex items-center gap-2 text-xs font-mono tracking-widest text-amber-400 uppercase mb-3">
-              <Trophy className="w-4 h-4 text-amber-400 inline" />
+            <div className="flex items-center gap-2 text-xs font-mono tracking-widest text-[#154284] uppercase mb-3">
+              <Trophy className="w-4 h-4 text-[#154284] inline" />
               <span>Comprehensive Milestone Summary · All 6 Accomplishments</span>
             </div>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold font-serif-prestige tracking-tight text-white uppercase leading-tight">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold font-sans tracking-tight text-slate-950 leading-tight">
               Achievement Timeline
             </h2>
-            <p className="mt-3 text-slate-300 text-sm sm:text-base lg:text-lg font-light max-w-2xl leading-relaxed text-balance">
+            <p className="mt-3 text-slate-600 text-sm sm:text-base lg:text-lg font-normal max-w-2xl leading-relaxed text-balance">
               A chronological vertical chronicle of Lionel Messi&rsquo;s six defining career accomplishments — from breaking international records to the World Cup crown and an unprecedented 46th trophy.
             </p>
           </div>
 
           {/* Quick Stats Summary Badge */}
-          <div className="bg-[#0b121e] border border-slate-800 p-4 rounded-xl flex items-center gap-6 self-start md:self-end shadow-md">
+          <div className="bg-white border border-sky-100 p-4 rounded-2xl flex items-center gap-6 self-start md:self-end shadow-md shadow-sky-900/5">
             <div>
-              <span className="text-[10px] font-mono text-slate-400 uppercase block tracking-wider">
+              <span className="text-[10px] font-mono text-slate-600 uppercase block tracking-wider">
                 Accomplishments
               </span>
-              <span className="text-2xl font-bold font-serif-prestige text-amber-400 tabular-nums">
+              <span className="text-2xl font-bold font-sans text-[#154284] tabular-nums">
                 6 / 6
               </span>
             </div>
-            <div className="h-8 w-px bg-slate-800" />
+            <div className="h-8 w-px bg-sky-100" />
             <div>
-              <span className="text-[10px] font-mono text-slate-400 uppercase block tracking-wider">
+              <span className="text-[10px] font-mono text-slate-600 uppercase block tracking-wider">
                 Chronology Span
               </span>
-              <span className="text-sm font-bold font-mono text-slate-200 tabular-nums">
+              <span className="text-sm font-bold font-mono text-slate-800 tabular-nums">
                 2016 – 2024
               </span>
             </div>
@@ -311,7 +311,7 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
 
         {/* Toolbar: Filters, Sort, Expand Controls, and Replay Reveal */}
         <div
-          className={`bg-[#080d16] p-3 sm:p-4 rounded-xl border border-slate-800/90 shadow-inner mb-10 flex flex-wrap items-center justify-between gap-3 transition-all duration-700 delay-100 ease-out ${
+          className={`bg-sky-50/70 p-3 sm:p-4 rounded-2xl border border-sky-100 shadow-sm shadow-sky-900/5 mb-10 flex flex-wrap items-center justify-between gap-3 transition-all duration-700 delay-100 ease-out ${
             prefersReducedMotion || isSectionInView
               ? 'opacity-100 translate-y-0'
               : 'opacity-0 translate-y-4'
@@ -319,7 +319,7 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
         >
           {/* Category Filter Tabs */}
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-xs font-mono text-slate-400 mr-1 hidden sm:inline-flex items-center gap-1">
+            <span className="text-xs font-mono text-slate-600 mr-1 hidden sm:inline-flex items-center gap-1">
               <Filter className="w-3.5 h-3.5 text-slate-500" />
               <span>Filter:</span>
             </span>
@@ -337,10 +337,11 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
                   soundFx.playClickTone();
                   setSelectedCategory(tab.id);
                 }}
-                className={`px-3 py-1.5 text-xs font-medium rounded transition-colors whitespace-nowrap ${
+                aria-pressed={selectedCategory === tab.id}
+                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap ${
                   selectedCategory === tab.id
-                    ? 'bg-amber-400 text-slate-950 font-semibold shadow-sm'
-                    : 'text-slate-400 hover:text-white bg-slate-900/60 border border-slate-800'
+                    ? 'bg-[#154284] text-white font-semibold shadow-sm'
+                    : 'text-slate-600 hover:text-slate-950 bg-sky-50/70 border border-sky-100'
                 }`}
               >
                 {tab.label}
@@ -353,17 +354,17 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
             <button
               type="button"
               onClick={handleSortToggle}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-mono rounded border border-slate-800 transition-colors whitespace-nowrap"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-sky-50 hover:bg-sky-100 text-slate-600 text-xs font-mono rounded-lg border border-sky-100 transition-colors whitespace-nowrap"
               title="Toggle Chronological Direction"
             >
-              <ArrowUpDown className="w-3.5 h-3.5 text-amber-400" />
+              <ArrowUpDown className="w-3.5 h-3.5 text-[#154284]" />
               <span>{sortDirection === 'asc' ? '2016 → 2024' : '2024 → 2016'}</span>
             </button>
 
             <button
               type="button"
               onClick={handleExpandAll}
-              className="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 text-xs font-mono rounded border border-slate-800 transition-colors whitespace-nowrap"
+              className="px-2.5 py-1.5 bg-sky-50 hover:bg-sky-100 text-slate-600 hover:text-slate-800 text-xs font-mono rounded-lg border border-sky-100 transition-colors whitespace-nowrap"
               title="Expand All Milestone Details"
             >
               Expand All
@@ -372,7 +373,7 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
             <button
               type="button"
               onClick={handleCollapseAll}
-              className="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 text-xs font-mono rounded border border-slate-800 transition-colors whitespace-nowrap"
+              className="px-2.5 py-1.5 bg-sky-50 hover:bg-sky-100 text-slate-600 hover:text-slate-800 text-xs font-mono rounded-lg border border-sky-100 transition-colors whitespace-nowrap"
               title="Collapse to Concise Summaries"
             >
               Collapse
@@ -381,7 +382,7 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
             <button
               type="button"
               onClick={handleReplayAnimation}
-              className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-900/80 hover:bg-amber-400/20 text-amber-400/90 hover:text-amber-300 text-xs font-mono rounded border border-amber-400/30 transition-colors whitespace-nowrap"
+              className="flex items-center gap-1 px-2.5 py-1.5 bg-sky-50 hover:bg-sky-100 text-[#154284] hover:text-[#154284] text-xs font-mono rounded-lg border border-sky-200 transition-colors whitespace-nowrap"
               title="Replay slide-in scroll reveal animation"
             >
               <RotateCcw className="w-3.5 h-3.5" />
@@ -391,7 +392,7 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
         </div>
 
         {/* Chronological Vertical List with responsive left margin & spine line */}
-        <div className="relative pl-10 sm:pl-14 space-y-8 before:absolute before:left-[17px] sm:before:left-[21px] before:top-4 before:bottom-6 before:w-0.5 before:bg-gradient-to-b before:from-amber-400 before:via-sky-400 before:to-amber-500">
+        <div className="relative pl-10 sm:pl-14 space-y-8 before:absolute before:left-[17px] sm:before:left-[21px] before:top-4 before:bottom-6 before:w-0.5 before:bg-gradient-to-b before:from-[#154284] before:via-sky-400 before:to-[#a50044]">
           {sortedItems.map((item, index) => {
             const Icon = getIconForCategory(item.category);
             const styling = getAccentForCategory(item.category);
@@ -418,9 +419,9 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
               >
                 {/* Timeline Node Marker accurately centered on the spine with pulse on reveal */}
                 <div
-                  className={`absolute -left-[37px] sm:-left-[45px] top-6 w-8 h-8 rounded-full bg-[#0a0f19] border-2 ${
+                  className={`absolute -left-[37px] sm:-left-[45px] top-6 w-8 h-8 rounded-full bg-white border-2 ${
                     styling.border
-                  } flex items-center justify-center shadow-lg transition-all duration-500 ${
+                  } flex items-center justify-center shadow-lg shadow-sky-900/5 transition-all duration-500 ${
                     isItemVisible ? `${styling.nodeGlow} scale-100` : 'scale-75 opacity-70'
                   } group-hover:scale-110 z-10`}
                 >
@@ -429,10 +430,10 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
 
                 {/* Milestone Card with subtle slide-in finish */}
                 <div
-                  className={`bg-[#0a0f1a] rounded-xl border transition-all duration-300 overflow-hidden ${
+                  className={`bg-white rounded-2xl border transition-all duration-300 overflow-hidden ${
                     isExpanded
-                      ? `${styling.border} shadow-xl ${styling.glow}`
-                      : 'border-slate-800 hover:border-slate-700'
+                      ? `${styling.border} shadow-xl shadow-sky-900/5 ${styling.glow}`
+                      : 'border-sky-100 hover:border-sky-200'
                   }`}
                 >
                   {/* Card Header & Summary Bar */}
@@ -446,31 +447,31 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
                         <span className={`font-semibold tabular-nums ${styling.label}`}>
                           {item.year} · {item.dateStr}
                         </span>
-                        <span className="text-slate-600" aria-hidden="true">·</span>
-                        <span className="text-slate-400 font-medium uppercase tracking-wider text-[11px]">
+                        <span className="text-slate-500" aria-hidden="true">·</span>
+                        <span className="text-slate-600 font-medium uppercase tracking-wider text-[11px]">
                           {item.badge}
                         </span>
-                        <span className="text-slate-600" aria-hidden="true">·</span>
-                        <span className="text-amber-400/90 font-mono text-[11px] tabular-nums">
+                        <span className="text-slate-500" aria-hidden="true">·</span>
+                        <span className="text-[#154284] font-mono text-[11px] tabular-nums">
                           Milestone #{item.order} of 6
                         </span>
                       </div>
 
                       {/* Accomplishment Title */}
-                      <h3 className="text-xl sm:text-2xl font-bold font-serif-prestige text-white group-hover:text-amber-300 transition-colors">
+                      <h3 className="text-xl sm:text-2xl font-bold font-sans text-slate-950 group-hover:text-[#154284] transition-colors">
                         {item.title}
                       </h3>
 
                       {/* Primary Verbatim Accomplishment Statement */}
-                      <p className="mt-2 text-sm sm:text-base text-slate-200 font-medium leading-relaxed">
+                      <p className="mt-2 text-sm sm:text-base text-slate-800 font-medium leading-relaxed">
                         &ldquo;{item.summary}&rdquo;
                       </p>
                     </div>
 
                     {/* Metric Badge & Expand Icon */}
-                    <div className="flex items-center justify-between lg:justify-end gap-3 shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-800/60">
-                      <div className="bg-[#070b14] px-3.5 py-2 rounded-lg border border-slate-800/90 text-left lg:text-right font-mono">
-                        <span className="text-[10px] text-slate-400 block uppercase tracking-wider">
+                    <div className="flex items-center justify-between lg:justify-end gap-3 shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-sky-100">
+                      <div className="bg-sky-50 px-3.5 py-2 rounded-2xl border border-sky-100 text-left lg:text-right font-mono">
+                        <span className="text-[10px] text-slate-600 block uppercase tracking-wider">
                           {item.metrics.label}
                         </span>
                         <span className={`text-sm sm:text-base font-bold tabular-nums ${styling.text}`}>
@@ -481,10 +482,11 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
                       <button
                         type="button"
                         aria-label={isExpanded ? 'Collapse milestone details' : 'Expand milestone details'}
-                        className="p-2 rounded-lg bg-slate-900 text-slate-400 hover:text-white border border-slate-800 transition-colors shrink-0"
+                        aria-expanded={isExpanded}
+                        className="p-2 rounded-2xl bg-sky-50 text-slate-600 hover:text-slate-950 border border-sky-100 transition-colors shrink-0"
                       >
                         {isExpanded ? (
-                          <ChevronUp className="w-5 h-5 text-amber-400" />
+                          <ChevronUp className="w-5 h-5 text-[#154284]" />
                         ) : (
                           <ChevronDown className="w-5 h-5" />
                         )}
@@ -494,21 +496,21 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
 
                   {/* Expanded In-depth Story & Cross-link Details */}
                   {isExpanded && (
-                    <div className="px-5 pb-6 sm:px-6 pt-2 border-t border-slate-800/80 bg-slate-950/40 space-y-5 animate-in fade-in duration-200">
+                    <div className="px-5 pb-6 sm:px-6 pt-2 border-t border-sky-100 bg-sky-50/70 space-y-5 animate-in fade-in duration-200">
                       {/* Deep Historical Details */}
-                      <div className="text-sm text-slate-300 leading-relaxed font-normal">
+                      <div className="text-sm text-slate-600 leading-relaxed font-normal">
                         <p>{item.details}</p>
                       </div>
 
                       {/* Highlight Quote if available */}
                       {item.quote && (
-                        <div className="p-4 rounded-lg bg-[#080d16] border border-slate-800/90 flex items-start gap-3">
-                          <Quote className="w-5 h-5 text-amber-400/80 shrink-0 mt-0.5" />
+                        <div className="p-4 rounded-2xl bg-sky-50/70 border border-sky-100 flex items-start gap-3">
+                          <Quote className="w-5 h-5 text-[#154284] shrink-0 mt-0.5" />
                           <div>
-                            <p className="text-xs sm:text-sm italic text-slate-200 leading-relaxed font-light">
+                            <p className="text-xs sm:text-sm italic text-slate-800 leading-relaxed font-normal">
                               &ldquo;{item.quote.text}&rdquo;
                             </p>
-                            <span className="mt-1 block text-xs font-mono text-amber-400">
+                            <span className="mt-1 block text-xs font-mono text-[#154284]">
                               — {item.quote.author}
                             </span>
                           </div>
@@ -532,9 +534,9 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
                               onSyncSeasonFilter(seasonMap[item.year] || `${item.year}`);
                               if (onNavigate) onNavigate('statistics');
                             }}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 text-xs font-mono transition-colors whitespace-nowrap"
+                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-sky-50 hover:bg-sky-100 text-slate-600 hover:text-slate-950 border border-sky-100 text-xs font-mono transition-colors whitespace-nowrap"
                           >
-                            <Calendar className="w-3.5 h-3.5 text-amber-400" />
+                            <Calendar className="w-3.5 h-3.5 text-[#154284]" />
                             <span>Inspect {item.year} Match Statistics</span>
                             <ArrowRight className="w-3 h-3 text-slate-500" />
                           </button>
@@ -552,9 +554,9 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
                                 onNavigate('trophies');
                               }
                             }}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded bg-slate-900 hover:bg-slate-800 text-sky-300 hover:text-sky-200 border border-slate-800 text-xs font-mono transition-colors whitespace-nowrap"
+                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-800 hover:text-sky-800 border border-sky-100 text-xs font-mono transition-colors whitespace-nowrap"
                           >
-                            <Star className="w-3.5 h-3.5 text-sky-400" />
+                            <Star className="w-3.5 h-3.5 text-sky-700" />
                             <span>
                               {item.category === 'world_cup'
                                 ? 'View Lusail World Cup Moments'
@@ -573,16 +575,16 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
         </div>
 
         {/* Bottom Editorial Callout Note */}
-        <div className="mt-14 p-6 rounded-xl bg-gradient-to-r from-slate-900/80 via-[#0a101d] to-slate-900/80 border border-slate-800 text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="mt-14 p-6 rounded-2xl bg-gradient-to-r from-sky-50 via-white to-sky-50 border border-sky-100 text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-amber-400/10 border border-amber-400/30 flex items-center justify-center shrink-0">
-              <CheckCircle2 className="w-5 h-5 text-amber-400" />
+            <div className="w-10 h-10 rounded-full bg-sky-50 border border-sky-200 flex items-center justify-center shrink-0">
+              <CheckCircle2 className="w-5 h-5 text-[#154284]" />
             </div>
             <div>
-              <div className="text-sm font-bold font-serif-prestige text-white">
+              <div className="text-sm font-bold font-sans text-slate-950">
                 All 6 Crown Accomplishments Verified
               </div>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-600">
                 Official FIFA, CONMEBOL, UEFA, France Football, and MLS records compiled chronologically.
               </p>
             </div>
@@ -595,7 +597,7 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
                 soundFx.playClickTone();
                 onNavigate('career-timeline');
               }}
-              className="px-4 py-2 bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-semibold rounded font-mono transition-colors shrink-0 flex items-center gap-1.5 whitespace-nowrap"
+              className="px-4 py-2 bg-[#154284] hover:bg-[#10366e] text-white text-xs font-semibold rounded-lg font-mono transition-colors shrink-0 flex items-center gap-1.5 whitespace-nowrap"
             >
               <span>Explore 21-Season Career Timeline</span>
               <ArrowRight className="w-3.5 h-3.5" />

@@ -40,6 +40,8 @@ export const GlobalSearchOverlay: React.FC<GlobalSearchOverlayProps> = ({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const restoreFocusRef = useRef(true);
   const resultsContainerRef = useRef<HTMLDivElement>(null);
 
   // Load recent searches on mount
@@ -49,7 +51,7 @@ export const GlobalSearchOverlay: React.FC<GlobalSearchOverlayProps> = ({
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed)) {
-          setRecentSearches(parsed.slice(0, MAX_RECENT_SEARCHES));
+          setRecentSearches(parsed.filter((value): value is string => typeof value === 'string').slice(0, MAX_RECENT_SEARCHES));
         }
       }
     } catch {
@@ -107,19 +109,20 @@ export const GlobalSearchOverlay: React.FC<GlobalSearchOverlayProps> = ({
 
   // Focus input and lock background scroll when opened
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      const timer = setTimeout(() => {
-        inputRef.current?.focus();
-        inputRef.current?.select();
-      }, 50);
-      return () => {
-        clearTimeout(timer);
-        document.body.style.overflow = 'unset';
-      };
-    } else {
-      document.body.style.overflow = 'unset';
-    }
+    if (!isOpen) return;
+    const dialog = dialogRef.current;
+    const previousOverflow = document.body.style.overflow;
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    restoreFocusRef.current = true;
+    dialog?.showModal();
+    document.body.style.overflow = 'hidden';
+    inputRef.current?.focus({ preventScroll: true });
+    inputRef.current?.select();
+    return () => {
+      dialog?.close();
+      document.body.style.overflow = previousOverflow;
+      if (restoreFocusRef.current) previousFocus?.focus({ preventScroll: true });
+    };
   }, [isOpen]);
 
   // Scroll active item into view
@@ -136,12 +139,7 @@ export const GlobalSearchOverlay: React.FC<GlobalSearchOverlayProps> = ({
     if (!isOpen) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        soundFx.playClickTone();
-        onClose();
-        return;
-      }
+      if (e.target !== inputRef.current) return;
 
       if (e.key === 'ArrowDown') {
         e.preventDefault();
@@ -178,6 +176,9 @@ export const GlobalSearchOverlay: React.FC<GlobalSearchOverlayProps> = ({
     } else {
       soundFx.playClickTone();
     }
+    // Release native modal inertness before the destination receives focus.
+    restoreFocusRef.current = false;
+    dialogRef.current?.close();
     onSelectResult(item);
     onClose();
   };
@@ -191,20 +192,27 @@ export const GlobalSearchOverlay: React.FC<GlobalSearchOverlayProps> = ({
   if (!isOpen) return null;
 
   const categories: Array<{ id: SearchCategory | 'all'; label: string; icon: React.ReactNode }> = [
-    { id: 'all', label: 'All Results', icon: <Sparkles className="w-3.5 h-3.5 text-amber-400" /> },
-    { id: 'year', label: 'Years & Seasons', icon: <Calendar className="w-3.5 h-3.5 text-sky-400" /> },
-    { id: 'trophy', label: 'Trophies & Honors', icon: <Trophy className="w-3.5 h-3.5 text-amber-400" /> },
-    { id: 'milestone', label: 'Milestones & Records', icon: <Sparkles className="w-3.5 h-3.5 text-emerald-400" /> },
-    { id: 'biography', label: 'Biography', icon: <BookOpen className="w-3.5 h-3.5 text-indigo-400" /> },
-    { id: 'goal', label: 'Iconic Goals', icon: <Target className="w-3.5 h-3.5 text-rose-400" /> },
+    { id: 'all', label: 'All Results', icon: <Sparkles className="w-3.5 h-3.5 text-[#154284]" /> },
+    { id: 'year', label: 'Years & Seasons', icon: <Calendar className="w-3.5 h-3.5 text-sky-700" /> },
+    { id: 'trophy', label: 'Trophies & Honors', icon: <Trophy className="w-3.5 h-3.5 text-[#154284]" /> },
+    { id: 'milestone', label: 'Milestones & Records', icon: <Sparkles className="w-3.5 h-3.5 text-emerald-700" /> },
+    { id: 'biography', label: 'Biography', icon: <BookOpen className="w-3.5 h-3.5 text-indigo-700" /> },
+    { id: 'goal', label: 'Iconic Goals', icon: <Target className="w-3.5 h-3.5 text-rose-700" /> },
   ];
 
   return (
-    <div
+    <dialog
+      id="archive-search-dialog"
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-label="Archive Global Search"
-      className="fixed inset-0 z-50 flex items-start justify-center pt-8 sm:pt-16 px-3 sm:px-4 pb-6 overflow-y-auto bg-slate-950/80 backdrop-blur-md transition-all animate-fadeIn"
+      className="archive-content fixed inset-0 z-50 m-0 h-dvh w-full max-h-none max-w-none flex items-start justify-center pt-8 sm:pt-16 px-3 sm:px-4 pb-6 overflow-y-auto bg-transparent transition-all animate-fadeIn"
+      onCancel={(event) => {
+        event.preventDefault();
+        soundFx.playClickTone();
+        onClose();
+      }}
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           soundFx.playClickTone();
@@ -213,12 +221,12 @@ export const GlobalSearchOverlay: React.FC<GlobalSearchOverlayProps> = ({
       }}
     >
       <div
-        className="relative w-full max-w-3xl rounded-2xl bg-[#090e18] border border-amber-500/30 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] overflow-hidden flex flex-col max-h-[85vh] ring-1 ring-amber-400/20"
+        className="relative w-full max-w-3xl rounded-2xl bg-white border border-sky-200 shadow-[0_24px_100px_-24px_rgba(15,48,80,0.35)] overflow-hidden flex flex-col max-h-[85vh] ring-1 ring-sky-200/60"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Search Header Bar */}
-        <div className="relative flex items-center gap-3 px-4 sm:px-5 py-4 border-b border-slate-800 bg-[#0c1322]">
-          <Search className="w-5 h-5 text-amber-400 shrink-0" />
+        <div className="relative flex items-center gap-3 px-4 sm:px-5 py-4 border-b border-sky-100 bg-sky-50/70">
+          <Search className="w-5 h-5 text-[#154284] shrink-0" />
           <input
             ref={inputRef}
             type="text"
@@ -226,7 +234,7 @@ export const GlobalSearchOverlay: React.FC<GlobalSearchOverlayProps> = ({
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search years (e.g. 2012, 2022), trophies (World Cup, Ballon d'Or), or milestones (napkin, sextuple)..."
             aria-label="Search the archive"
-            className="w-full bg-transparent text-slate-100 placeholder-slate-500 text-sm sm:text-base font-medium focus:outline-none"
+            className="w-full bg-transparent text-slate-950 placeholder-slate-500 text-sm sm:text-base font-medium focus:outline-none"
           />
 
           {query && (
@@ -237,15 +245,15 @@ export const GlobalSearchOverlay: React.FC<GlobalSearchOverlayProps> = ({
                 setQuery('');
                 inputRef.current?.focus();
               }}
-              className="p-1 rounded-full text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              className="p-1 rounded-full text-slate-600 hover:text-slate-950 hover:bg-sky-100 transition-colors"
               aria-label="Clear search query"
             >
               <X className="w-4 h-4" />
             </button>
           )}
 
-          <div className="flex items-center gap-1.5 shrink-0 pl-2 border-l border-slate-800">
-            <kbd className="hidden sm:inline-flex items-center gap-0.5 px-2 py-0.5 text-[10px] font-mono text-slate-400 bg-slate-900 border border-slate-700 rounded shadow-sm">
+          <div className="flex items-center gap-1.5 shrink-0 pl-2 border-l border-sky-100">
+            <kbd className="hidden sm:inline-flex items-center gap-0.5 px-2 py-0.5 text-[10px] font-mono text-slate-600 bg-sky-50 border border-sky-200 rounded-lg shadow-sm">
               ESC
             </kbd>
             <button
@@ -254,7 +262,7 @@ export const GlobalSearchOverlay: React.FC<GlobalSearchOverlayProps> = ({
                 soundFx.playClickTone();
                 onClose();
               }}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              className="p-1.5 rounded-2xl text-slate-600 hover:text-slate-950 hover:bg-sky-100 transition-colors"
               aria-label="Close search overlay"
             >
               <X className="w-5 h-5" />
@@ -263,21 +271,22 @@ export const GlobalSearchOverlay: React.FC<GlobalSearchOverlayProps> = ({
         </div>
 
         {/* Category Filter Tabs */}
-        <div className="flex items-center gap-1.5 px-4 py-2.5 overflow-x-auto whitespace-nowrap bg-[#080d16] border-b border-slate-800/80 scrollbar-none">
+        <div className="flex items-center gap-1.5 px-4 py-2.5 overflow-x-auto whitespace-nowrap bg-sky-50/70 border-b border-sky-100 scrollbar-none">
           {categories.map((cat) => {
             const isActive = selectedCategory === cat.id;
             return (
               <button
                 key={cat.id}
                 type="button"
+                aria-pressed={isActive}
                 onClick={() => {
                   soundFx.playClickTone();
                   setSelectedCategory(cat.id);
                 }}
                 className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all ${
                   isActive
-                    ? 'bg-amber-400 text-slate-950 font-semibold shadow-sm'
-                    : 'bg-slate-900/80 text-slate-300 hover:text-white hover:bg-slate-800 border border-slate-800'
+                    ? 'bg-[#154284] text-white [&_svg]:text-white font-semibold shadow-sm'
+                    : 'bg-sky-50 text-slate-600 hover:text-slate-950 hover:bg-sky-100 border border-sky-100'
                 }`}
               >
                 {cat.icon}
@@ -288,21 +297,21 @@ export const GlobalSearchOverlay: React.FC<GlobalSearchOverlayProps> = ({
         </div>
 
         {/* Results Container / Empty State */}
-        <div ref={resultsContainerRef} className="flex-1 overflow-y-auto divide-y divide-slate-800/60 p-2 sm:p-3">
+        <div ref={resultsContainerRef} className="flex-1 overflow-y-auto divide-y divide-sky-100 p-2 sm:p-3">
           {query.trim() === '' ? (
             <div className="py-6 px-4 space-y-6">
               {/* Recent Searches */}
               {recentSearches.length > 0 && (
                 <div>
-                  <div className="flex items-center justify-between text-xs font-mono text-slate-400 uppercase tracking-wider mb-2.5">
+                  <div className="flex items-center justify-between text-xs font-mono text-slate-600 uppercase tracking-wider mb-2.5">
                     <span className="flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5 text-amber-400" />
+                      <Clock className="w-3.5 h-3.5 text-[#154284]" />
                       Recent Searches
                     </span>
                     <button
                       type="button"
                       onClick={clearRecentSearches}
-                      className="text-slate-500 hover:text-rose-400 transition-colors flex items-center gap-1 text-[11px]"
+                      className="text-slate-500 hover:text-rose-700 transition-colors flex items-center gap-1 text-[11px]"
                     >
                       <Trash2 className="w-3 h-3" />
                       Clear History
@@ -312,15 +321,15 @@ export const GlobalSearchOverlay: React.FC<GlobalSearchOverlayProps> = ({
                     {recentSearches.map((item) => (
                       <div
                         key={item}
-                        onClick={() => handlePromptClick(item)}
-                        className="group flex items-center gap-2 px-3 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 rounded-lg text-xs text-slate-200 cursor-pointer transition-colors"
+                        className="group flex items-center gap-2 px-3 py-1.5 bg-sky-50 hover:bg-sky-100 border border-sky-100 hover:border-sky-200 rounded-2xl text-xs text-slate-800 cursor-pointer transition-colors"
                       >
-                        <span>{item}</span>
+                        <button type="button" onClick={() => handlePromptClick(item)}>{item}</button>
                         <button
                           type="button"
                           onClick={(e) => removeSingleRecentSearch(e, item)}
-                          className="text-slate-500 group-hover:text-slate-400 hover:text-rose-400"
+                          className="text-slate-500 group-hover:text-slate-600 hover:text-rose-700"
                           title="Remove from history"
+                          aria-label={`Remove ${item} from history`}
                         >
                           <X className="w-3 h-3" />
                         </button>
@@ -332,8 +341,8 @@ export const GlobalSearchOverlay: React.FC<GlobalSearchOverlayProps> = ({
 
               {/* Popular Search Suggestions */}
               <div>
-                <div className="text-xs font-mono text-slate-400 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <div className="text-xs font-mono text-slate-600 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-[#154284]" />
                   Key Archive Topics & Milestones
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -342,60 +351,60 @@ export const GlobalSearchOverlay: React.FC<GlobalSearchOverlayProps> = ({
                       key={prompt}
                       type="button"
                       onClick={() => handlePromptClick(prompt)}
-                      className="flex items-center justify-between p-2.5 rounded-lg bg-[#0c1322] hover:bg-[#111a2e] border border-slate-800 hover:border-amber-500/40 text-left text-xs text-slate-200 transition-all group"
+                      className="flex items-center justify-between p-2.5 rounded-2xl bg-sky-50/70 hover:bg-sky-100 border border-sky-100 hover:border-sky-300 text-left text-xs text-slate-800 transition-all group"
                     >
                       <div className="flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 group-hover:scale-125 transition-transform" />
-                        <span className="font-medium group-hover:text-amber-300 transition-colors">{prompt}</span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#154284] group-hover:scale-125 transition-transform" />
+                        <span className="font-medium group-hover:text-[#154284] transition-colors">{prompt}</span>
                       </div>
-                      <ArrowRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-amber-400 group-hover:translate-x-0.5 transition-all" />
+                      <ArrowRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-[#154284] group-hover:translate-x-0.5 transition-all" />
                     </button>
                   ))}
                 </div>
               </div>
 
               {/* Browse Quick Index */}
-              <div className="p-3.5 rounded-xl bg-amber-950/20 border border-amber-500/20 text-xs text-amber-200/90 leading-relaxed">
-                <span className="font-semibold text-amber-300">Archive Search Tip:</span> Search across 20+ years of
+              <div className="p-3.5 rounded-2xl bg-sky-50 border border-sky-200 text-xs text-blue-900 leading-relaxed">
+                <span className="font-semibold text-[#154284]">Archive Search Tip:</span> Search across 20+ years of
                 stats, 46 official trophies, 6 crown timeline milestones, tactical pitch animations, and detailed
                 biography chapters.
               </div>
             </div>
           ) : results.length === 0 ? (
             <div className="py-12 px-4 text-center">
-              <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500">
+              <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-sky-50 border border-sky-100 flex items-center justify-center text-slate-500">
                 <Search className="w-6 h-6" />
               </div>
-              <h3 className="text-base font-bold text-slate-200 mb-1">No matching entries found</h3>
-              <p className="text-xs text-slate-400 max-w-sm mx-auto mb-4">
+              <h3 className="text-base font-bold text-slate-800 mb-1">No matching entries found</h3>
+              <p className="text-xs text-slate-600 max-w-sm mx-auto mb-4">
                 We couldn&rsquo;t find anything matching &ldquo;{query}&rdquo; in {selectedCategory === 'all' ? 'the archive' : selectedCategory}.
               </p>
               <div className="flex flex-wrap items-center justify-center gap-2">
                 <button
                   type="button"
                   onClick={() => handlePromptClick('2012')}
-                  className="px-2.5 py-1 text-xs rounded bg-slate-900 border border-slate-800 text-amber-300 hover:bg-slate-800"
+                  className="px-2.5 py-1 text-xs rounded-lg bg-sky-50 border border-sky-100 text-[#154284] hover:bg-sky-100"
                 >
                   Try &ldquo;2012&rdquo;
                 </button>
                 <button
                   type="button"
                   onClick={() => handlePromptClick('World Cup')}
-                  className="px-2.5 py-1 text-xs rounded bg-slate-900 border border-slate-800 text-amber-300 hover:bg-slate-800"
+                  className="px-2.5 py-1 text-xs rounded-lg bg-sky-50 border border-sky-100 text-[#154284] hover:bg-sky-100"
                 >
                   Try &ldquo;World Cup&rdquo;
                 </button>
                 <button
                   type="button"
                   onClick={() => handlePromptClick("Ballon d'Or")}
-                  className="px-2.5 py-1 text-xs rounded bg-slate-900 border border-slate-800 text-amber-300 hover:bg-slate-800"
+                  className="px-2.5 py-1 text-xs rounded-lg bg-sky-50 border border-sky-100 text-[#154284] hover:bg-sky-100"
                 >
                   Try &ldquo;Ballon d&rsquo;Or&rdquo;
                 </button>
                 <button
                   type="button"
                   onClick={() => setSelectedCategory('all')}
-                  className="px-2.5 py-1 text-xs rounded bg-slate-900 border border-slate-800 text-slate-300 hover:bg-slate-800"
+                  className="px-2.5 py-1 text-xs rounded-lg bg-sky-50 border border-sky-100 text-slate-600 hover:bg-sky-100"
                 >
                   Clear filter
                 </button>
@@ -409,30 +418,30 @@ export const GlobalSearchOverlay: React.FC<GlobalSearchOverlayProps> = ({
               const getCategoryBadgeClass = (category: SearchCategory) => {
                 switch (category) {
                   case 'trophy':
-                    return 'bg-amber-400/10 text-amber-300 border-amber-400/30';
+                    return 'bg-sky-50 text-[#154284] border-sky-200';
                   case 'milestone':
-                    return 'bg-emerald-400/10 text-emerald-300 border-emerald-400/30';
+                    return 'bg-emerald-400/10 text-emerald-800 border-emerald-400/30';
                   case 'year':
-                    return 'bg-sky-400/10 text-sky-300 border-sky-400/30';
+                    return 'bg-sky-400/10 text-sky-800 border-sky-400/30';
                   case 'biography':
-                    return 'bg-indigo-400/10 text-indigo-300 border-indigo-400/30';
+                    return 'bg-indigo-400/10 text-indigo-800 border-indigo-400/30';
                   case 'goal':
-                    return 'bg-rose-400/10 text-rose-300 border-rose-400/30';
+                    return 'bg-rose-400/10 text-rose-800 border-rose-400/30';
                 }
               };
 
               const getCategoryIcon = (category: SearchCategory) => {
                 switch (category) {
                   case 'trophy':
-                    return <Trophy className="w-3.5 h-3.5 text-amber-400" />;
+                    return <Trophy className="w-3.5 h-3.5 text-[#154284]" />;
                   case 'milestone':
-                    return <Sparkles className="w-3.5 h-3.5 text-emerald-400" />;
+                    return <Sparkles className="w-3.5 h-3.5 text-emerald-700" />;
                   case 'year':
-                    return <Calendar className="w-3.5 h-3.5 text-sky-400" />;
+                    return <Calendar className="w-3.5 h-3.5 text-sky-700" />;
                   case 'biography':
-                    return <BookOpen className="w-3.5 h-3.5 text-indigo-400" />;
+                    return <BookOpen className="w-3.5 h-3.5 text-indigo-700" />;
                   case 'goal':
-                    return <Target className="w-3.5 h-3.5 text-rose-400" />;
+                    return <Target className="w-3.5 h-3.5 text-rose-700" />;
                 }
               };
 
@@ -440,15 +449,17 @@ export const GlobalSearchOverlay: React.FC<GlobalSearchOverlayProps> = ({
               const subtitleSegments = splitTextForHighlight(item.subtitle, query);
 
               return (
-                <div
+                <button
                   key={item.id}
+                  type="button"
                   data-result-index={idx}
                   onClick={() => handleSelectResult(item)}
                   onMouseEnter={() => setSelectedIndex(idx)}
-                  className={`group relative p-3 sm:p-3.5 rounded-xl cursor-pointer transition-all ${
+                  onFocus={() => setSelectedIndex(idx)}
+                  className={`group relative w-full text-left p-3 sm:p-3.5 rounded-2xl cursor-pointer transition-all ${
                     isSelected
-                      ? 'bg-[#121c32] ring-1 ring-amber-400/50 shadow-md'
-                      : 'hover:bg-[#0c1424]'
+                      ? 'bg-sky-50 ring-1 ring-sky-300 shadow-md shadow-sky-900/5'
+                      : 'hover:bg-sky-50/70'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -456,7 +467,7 @@ export const GlobalSearchOverlay: React.FC<GlobalSearchOverlayProps> = ({
                       {/* Category and badges */}
                       <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                         <span
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-medium border ${getCategoryBadgeClass(
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-mono font-medium border ${getCategoryBadgeClass(
                             item.category
                           )}`}
                         >
@@ -465,25 +476,25 @@ export const GlobalSearchOverlay: React.FC<GlobalSearchOverlayProps> = ({
                         </span>
 
                         {item.badge && (
-                          <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-slate-800 text-amber-300 border border-slate-700">
+                          <span className="px-2 py-0.5 rounded-lg text-[10px] font-mono font-semibold bg-sky-100 text-[#154284] border border-sky-200">
                             {item.badge}
                           </span>
                         )}
 
                         {item.year && (
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-mono text-slate-400 bg-slate-900 border border-slate-800">
+                          <span className="px-1.5 py-0.5 rounded-lg text-[10px] font-mono text-slate-600 bg-sky-50 border border-sky-100">
                             {item.year}
                           </span>
                         )}
                       </div>
 
                       {/* Title with highlight */}
-                      <h4 className="text-sm sm:text-base font-semibold text-slate-100 group-hover:text-amber-300 transition-colors line-clamp-1">
+                      <h4 className="text-sm sm:text-base font-semibold text-slate-950 group-hover:text-[#154284] transition-colors line-clamp-1">
                         {titleSegments.map((seg, sIdx) =>
                           seg.isMatch ? (
                             <mark
                               key={sIdx}
-                              className="bg-amber-400/25 text-amber-300 font-semibold rounded px-0.5"
+                              className="bg-sky-100 text-[#154284] font-semibold rounded-lg px-0.5"
                             >
                               {seg.text}
                             </mark>
@@ -494,12 +505,12 @@ export const GlobalSearchOverlay: React.FC<GlobalSearchOverlayProps> = ({
                       </h4>
 
                       {/* Subtitle */}
-                      <p className="text-xs text-slate-300 mt-0.5 line-clamp-1">
+                      <p className="text-xs text-slate-600 mt-0.5 line-clamp-1">
                         {subtitleSegments.map((seg, sIdx) =>
                           seg.isMatch ? (
                             <mark
                               key={sIdx}
-                              className="bg-amber-400/20 text-amber-300 font-medium rounded px-0.5"
+                              className="bg-sky-100 text-[#154284] font-medium rounded-lg px-0.5"
                             >
                               {seg.text}
                             </mark>
@@ -511,7 +522,7 @@ export const GlobalSearchOverlay: React.FC<GlobalSearchOverlayProps> = ({
 
                       {/* Excerpt */}
                       {item.description && (
-                        <p className="text-[11px] text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+                        <p className="text-[11px] text-slate-600 mt-1 line-clamp-2 leading-relaxed">
                           {item.description}
                         </p>
                       )}
@@ -519,42 +530,42 @@ export const GlobalSearchOverlay: React.FC<GlobalSearchOverlayProps> = ({
 
                     {/* Navigation arrow / Action indicator */}
                     <div className="shrink-0 self-center hidden sm:flex items-center gap-1.5 pl-2">
-                      <span className="text-[11px] font-mono text-slate-500 group-hover:text-amber-400 transition-colors">
+                      <span className="text-[11px] font-mono text-slate-500 group-hover:text-[#154284] transition-colors">
                         Jump
                       </span>
                       <div
                         className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${
                           isSelected
-                            ? 'bg-amber-400 text-slate-950 scale-110 shadow'
-                            : 'bg-slate-800 text-slate-400 group-hover:bg-amber-400 group-hover:text-slate-950'
+                            ? 'bg-[#154284] text-white scale-110 shadow'
+                            : 'bg-sky-100 text-slate-600 group-hover:bg-[#154284] group-hover:text-white'
                         }`}
                       >
                         <ArrowRight className="w-3.5 h-3.5" />
                       </div>
                     </div>
                   </div>
-                </div>
+                </button>
               );
             })
           )}
         </div>
 
         {/* Footer info bar */}
-        <div className="flex items-center justify-between px-4 py-2.5 bg-[#070b12] border-t border-slate-800 text-[11px] font-mono text-slate-400">
+        <div className="flex items-center justify-between px-4 py-2.5 bg-white border-t border-sky-100 text-[11px] font-mono text-slate-600">
           <div className="flex items-center gap-3">
             <span className="hidden sm:inline-flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 bg-slate-900 border border-slate-800 rounded text-[10px]">↑</kbd>
-              <kbd className="px-1.5 py-0.5 bg-slate-900 border border-slate-800 rounded text-[10px]">↓</kbd>
+              <kbd className="px-1.5 py-0.5 bg-sky-50 border border-sky-100 rounded-lg text-[10px]">↑</kbd>
+              <kbd className="px-1.5 py-0.5 bg-sky-50 border border-sky-100 rounded-lg text-[10px]">↓</kbd>
               <span className="text-slate-500">Navigate</span>
             </span>
             <span className="hidden sm:inline-flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 bg-slate-900 border border-slate-800 rounded text-[10px]">
+              <kbd className="px-1.5 py-0.5 bg-sky-50 border border-sky-100 rounded-lg text-[10px]">
                 <CornerDownLeft className="w-2.5 h-2.5 inline" />
               </kbd>
               <span className="text-slate-500">Select</span>
             </span>
             <span className="hidden sm:inline-flex items-center gap-1">
-              <kbd className="px-1.5 py-0.5 bg-slate-900 border border-slate-800 rounded text-[10px]">ESC</kbd>
+              <kbd className="px-1.5 py-0.5 bg-sky-50 border border-sky-100 rounded-lg text-[10px]">ESC</kbd>
               <span className="text-slate-500">Close</span>
             </span>
             <span className="sm:hidden text-slate-500">
@@ -562,10 +573,10 @@ export const GlobalSearchOverlay: React.FC<GlobalSearchOverlayProps> = ({
             </span>
           </div>
 
-          <div className="text-slate-400">
+          <div className="text-slate-600">
             {query.trim() ? (
               <span>
-                <strong className="text-amber-400 font-semibold">{results.length}</strong>{' '}
+                <strong className="text-[#154284] font-semibold">{results.length}</strong>{' '}
                 {results.length === 1 ? 'match' : 'matches'}
               </span>
             ) : (
@@ -574,6 +585,6 @@ export const GlobalSearchOverlay: React.FC<GlobalSearchOverlayProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </dialog>
   );
 };

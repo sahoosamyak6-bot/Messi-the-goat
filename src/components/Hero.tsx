@@ -1,6 +1,6 @@
-import React from 'react';
-import { Trophy, Award, Target, Compass, ChevronDown, Flame, Play, Calendar, Search } from 'lucide-react';
-import { soundFx } from '../utils/audio';
+import { useState } from 'react';
+import { ArrowDown, ArrowUpRight, CirclePlay, Search, Trophy } from 'lucide-react';
+import { photoAssets } from '../data/photo-assets';
 
 interface HeroProps {
   onNavigate: (sectionId: string) => void;
@@ -8,194 +8,39 @@ interface HeroProps {
   onOpenSearch?: () => void;
 }
 
-export const Hero: React.FC<HeroProps> = ({ onNavigate, onOpenHighlightModal, onOpenSearch }) => {
-  const statsOverview = [
-    {
-      label: 'Official Career Goals',
-      value: '849+',
-      sub: 'Senior Club & Country Matches',
-      icon: Target,
-      accent: 'text-amber-400',
-    },
-    {
-      label: 'Career Assists',
-      value: '378+',
-      sub: 'All-time Playmaking Leader',
-      icon: Compass,
-      accent: 'text-sky-400',
-    },
-    {
-      label: 'Silverware Titles',
-      value: '46',
-      sub: 'Most Decorated Player in History',
-      icon: Trophy,
-      accent: 'text-amber-300',
-    },
-    {
-      label: 'Ballon d’Or Awards',
-      value: '8',
-      sub: 'Unbroken World Record (2009–2023)',
-      icon: Award,
-      accent: 'text-amber-400',
-    },
-  ];
-
-  return (
-    <section id="hero" className="relative overflow-hidden pt-12 pb-20 border-b border-slate-800/80">
-      {/* Background Ambience Elements */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[400px] bg-sky-900/15 rounded-full blur-3xl" />
-        <div className="absolute top-1/3 left-1/4 w-[450px] h-[350px] bg-amber-600/10 rounded-full blur-3xl" />
-        <div className="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:24px_24px] opacity-25" />
+export function Hero({ onNavigate, onOpenSearch }: HeroProps) {
+  const [photoFailed, setPhotoFailed] = useState(false);
+  const photo = photoAssets.hero;
+  return <>
+    <section className="hero section-anchor" id="hero" tabIndex={-1} aria-labelledby="hero-title">
+      <div className="hero-copy">
+        <div className="eyebrow"><span className="argentina-flag" /> LIONEL ANDRÉS MESSI</div>
+        <h1 id="hero-title">Made of<br /><em>magic.</em><span className="hero-star" aria-hidden="true">✳</span></h1>
+        <p className="hero-lead">A boy from Rosario. A left foot like no other.<br className="desktop-break" /> A story that belongs to the beautiful game.</p>
+        <div className="hero-actions">
+          <button className="button button-primary" onClick={() => onNavigate('gallery')}>Relive the moments <ArrowUpRight size={18} /></button>
+          <button className="button button-plain" onClick={() => onNavigate('lab')}><CirclePlay size={21} /> Enter the lab</button>
+        </div>
+        <div className="hero-note"><span className="little-stars" aria-label="Three stars">★ ★ ★</span><p>For the blue and white.<br /><strong>For the love of football.</strong></p></div>
+        {onOpenSearch && <button className="hero-search" onClick={onOpenSearch}><Search size={14} /> Search the entire archive <kbd>⌘ / Ctrl K</kbd></button>}
       </div>
-
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Editorial Subheading Kicker */}
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-mono tracking-widest text-sky-400 uppercase mb-4">
-          <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-sky-400 animate-pulse" />
-            <span>The Definitive Chronicle · 1987 – Present</span>
-          </span>
-          <span className="text-slate-600 hidden sm:inline">/</span>
-          <span className="text-slate-400 hidden sm:inline">Argentina · Barcelona · Paris · Miami</span>
+      <figure className="hero-visual">
+        <div className="hero-photo-frame">
+          {photoFailed ? <div className="hero-photo photo-unavailable"><span>Argentina. Always.</span><small>The archive photograph is unavailable.</small></div> : <img src={photo.src} alt={photo.alt} width={photo.width} height={photo.height} fetchPriority="high" decoding="async" className="hero-photo" style={{ objectPosition: photo.objectPosition }} onError={() => setPhotoFailed(true)} />}
+          <div className="hero-photo-shade" /><span className="hero-photo-label">THE NUMBER <strong>10.</strong></span><span className="hero-photo-footer">ARGENTINA. ALWAYS.</span>
         </div>
-
-        {/* Main Title */}
-        <div className="max-w-4xl">
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold font-serif-prestige tracking-tight text-white uppercase leading-[1.08]">
-            Lionel Andrés <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-400 to-amber-600">Messi</span>
-          </h1>
-          <p className="mt-4 text-lg sm:text-xl text-slate-300 font-light leading-relaxed max-w-3xl">
-            From the dusty streets of Rosario and a contract signed on a paper napkin to eight Ballons d’Or and the golden summit of Lusail. The definitive retrospective of association football’s undisputed greatest artist.
-          </p>
-        </div>
-
-        {/* Primary Interactive CTAs */}
-        <div className="mt-8 flex flex-wrap items-center gap-4">
-          <button
-            type="button"
-            onClick={() => {
-              soundFx.playClickTone();
-              onNavigate('biography');
-            }}
-            className="px-6 py-3 bg-amber-400 hover:bg-amber-300 text-slate-950 font-semibold text-sm tracking-wide rounded transition-all shadow-lg hover:shadow-amber-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
-          >
-            Read Comprehensive Biography
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              soundFx.playClickTone();
-              onNavigate('statistics');
-            }}
-            className="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-100 font-semibold text-sm tracking-wide rounded border border-slate-700 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
-          >
-            Explore Career Statistics
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              soundFx.playClickTone();
-              onNavigate('achievement-timeline');
-            }}
-            className="px-5 py-3 bg-gradient-to-r from-amber-500/20 to-amber-600/10 hover:from-amber-500/30 hover:to-amber-600/20 text-amber-300 font-semibold text-sm tracking-wide rounded border border-amber-400/40 hover:border-amber-400 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 flex items-center gap-2"
-          >
-            <Trophy className="w-4 h-4 text-amber-400" />
-            <span>Achievement Timeline</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              soundFx.playClickTone();
-              onNavigate('career-timeline');
-            }}
-            className="px-5 py-3 bg-slate-900 hover:bg-slate-800 text-slate-200 font-semibold text-sm tracking-wide rounded border border-slate-700 hover:border-slate-600 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 flex items-center gap-2"
-          >
-            <Calendar className="w-4 h-4 text-slate-400" />
-            <span>Career Chronology</span>
-          </button>
-
-          {onOpenSearch && (
-            <button
-              type="button"
-              onClick={() => {
-                soundFx.playClickTone();
-                onOpenSearch();
-              }}
-              className="px-5 py-3 bg-[#0d1527] hover:bg-[#121e38] text-slate-200 hover:text-amber-300 font-semibold text-sm tracking-wide rounded border border-slate-700 hover:border-amber-400/50 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 flex items-center gap-2 group shadow-sm"
-              aria-label="Open search archive"
-            >
-              <Search className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />
-              <span>Search Archive</span>
-              <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono text-slate-400 bg-slate-900 border border-slate-700 rounded">
-                ⌘K
-              </kbd>
-            </button>
-          )}
-
-          <button
-            type="button"
-            onClick={() => {
-              soundFx.playClickTone();
-              onNavigate('gallery');
-            }}
-            className="px-5 py-3 text-sky-300 hover:text-white font-medium text-sm flex items-center gap-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
-          >
-            <Play className="w-4 h-4 text-sky-400 fill-sky-400/20" />
-            <span>Iconic Moments & Videos</span>
-          </button>
-        </div>
-
-        {/* Key Career Metrics Grid (Zero-Pill Discipline) */}
-        <div className="mt-14 pt-10 border-t border-slate-800/80 grid grid-cols-2 md:grid-cols-4 gap-6 lg:gap-8">
-          {statsOverview.map((item, idx) => {
-            const Icon = item.icon;
-            return (
-              <div
-                key={idx}
-                className="group relative bg-[#0a0f19] p-5 rounded-lg border border-slate-800/80 hover:border-slate-700 transition-all"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-mono uppercase tracking-wider text-slate-400">
-                    {item.label}
-                  </span>
-                  <Icon className={`w-4 h-4 ${item.accent} opacity-80`} />
-                </div>
-                <div className={`text-3xl sm:text-4xl font-extrabold font-serif-prestige tracking-tight ${item.accent}`}>
-                  {item.value}
-                </div>
-                <div className="mt-1 text-xs text-slate-400 font-normal">
-                  {item.sub}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Editorial Pull Quote */}
-        <div className="mt-12 p-6 rounded-lg bg-gradient-to-r from-slate-900/90 via-[#0c1322] to-slate-900/90 border border-slate-800/60 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <p className="text-sm sm:text-base italic text-slate-200 font-light">
-              &ldquo;I have seen the player who will inherit my place in Argentine football, and his name is Messi.&rdquo;
-            </p>
-            <p className="text-xs font-mono text-amber-400/90">
-              — Diego Armando Maradona (2006)
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => onNavigate('pitch-visualizer')}
-            className="shrink-0 flex items-center gap-2 text-xs font-semibold text-sky-400 hover:text-sky-300 transition-colors"
-          >
-            <Flame className="w-4 h-4 text-amber-400" />
-            <span>Launch Tactical Goal Lab</span>
-            <ChevronDown className="w-3.5 h-3.5 rotate-[-90deg]" />
-          </button>
-        </div>
-      </div>
+        <div className="hero-stamp"><Trophy size={20} /><span>WORLD<br /><strong>CHAMPION</strong></span><small>QATAR 2022</small></div>
+        <figcaption className="hero-side-label">WORLD CUP 2022 · PHOTO CREDITS BELOW</figcaption><span className="hero-doodle" aria-hidden="true">✦</span>
+      </figure>
+      <button className="scroll-cue" onClick={() => onNavigate('biography')}>SCROLL INTO THE STORY <ArrowDown size={15} /></button>
     </section>
-  );
-};
+    <div className="stat-strip" aria-label="Selected historical honours">
+      {[
+        ['8', 'Ballon d’Or awards', 'THROUGH 2023'],
+        ['1', 'World Cup', 'QATAR 2022'],
+        ['2', 'Copa América titles', '2021 & 2024'],
+        ['4', 'Champions League titles', 'WITH BARCELONA'],
+      ].map(([value, label, detail]) => <div className="stat-item" key={label}><strong>{value}</strong><span>{label}<small>{detail}</small></span></div>)}
+    </div>
+  </>;
+}

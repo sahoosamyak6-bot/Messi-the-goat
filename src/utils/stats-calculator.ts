@@ -1,5 +1,10 @@
 import type { CareerYearStat, TrophyItem } from '../types/messi';
 
+/** Match timeline season labels and table rows regardless of separator style. */
+export function normalizeSeasonSearch(value: string): string {
+  return value.trim().toLowerCase().replace(/\s*[-/–—]\s*/g, '-');
+}
+
 export function calculateCareerTotals(stats: CareerYearStat[]) {
   return stats.reduce(
     (acc, curr) => {

@@ -4,23 +4,57 @@ import { IconicGoal } from '../types/messi';
 import { Play, Pause, RotateCcw, Volume2, Shield, Activity, Award, Compass } from 'lucide-react';
 import { soundFx } from '../utils/audio';
 
-export const PitchVisualizer: React.FC = () => {
+interface PitchVisualizerProps {
+  active?: boolean;
+}
+
+export const PitchVisualizer: React.FC<PitchVisualizerProps> = ({ active = true }) => {
   const [selectedGoalId, setSelectedGoalId] = useState<string>(ICONIC_GOALS_TACTICAL[0].id);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [playbackProgress, setPlaybackProgress] = useState<number>(100); // 0 to 100
+  const [reducedMotion, setReducedMotion] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+  );
 
   const activeGoal = ICONIC_GOALS_TACTICAL.find((g) => g.id === selectedGoalId) || ICONIC_GOALS_TACTICAL[0];
 
+  useEffect(() => {
+    const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const updatePreference = () => {
+      setReducedMotion(preference.matches);
+      if (preference.matches) setIsPlaying(false);
+    };
+    const pauseWhenHidden = () => { if (document.hidden) setIsPlaying(false); };
+    updatePreference();
+    preference.addEventListener('change', updatePreference);
+    document.addEventListener('visibilitychange', pauseWhenHidden);
+    return () => {
+      preference.removeEventListener('change', updatePreference);
+      document.removeEventListener('visibilitychange', pauseWhenHidden);
+    };
+  }, []);
+
   // Play animation loop
   useEffect(() => {
-    let animId: number;
+    let animId: number | undefined;
     let start: number | null = null;
     const duration = 3000; // 3 seconds
+    const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    if (!active || reducedMotion || document.hidden) {
+      if (isPlaying) setIsPlaying(false);
+      return;
+    }
 
     if (isPlaying) {
       soundFx.playBallKick();
       const step = (timestamp: number) => {
-        if (!start) start = timestamp;
+        // Check current visibility/preferences before a queued frame can finish or play audio.
+        if (document.hidden || preference.matches) {
+          setIsPlaying(false);
+          return;
+        }
+        if (start === null) start = timestamp;
         const progress = Math.min(((timestamp - start) / duration) * 100, 100);
         setPlaybackProgress(progress);
 
@@ -35,9 +69,9 @@ export const PitchVisualizer: React.FC = () => {
     }
 
     return () => {
-      if (animId) cancelAnimationFrame(animId);
+      if (animId !== undefined) cancelAnimationFrame(animId);
     };
-  }, [isPlaying]);
+  }, [isPlaying, active, reducedMotion]);
 
   const handleSelectGoal = (id: string) => {
     soundFx.playClickTone();
@@ -47,6 +81,7 @@ export const PitchVisualizer: React.FC = () => {
   };
 
   const handleTogglePlay = () => {
+    if (!active || reducedMotion || document.hidden) return;
     if (isPlaying) {
       setIsPlaying(false);
     } else {
@@ -145,7 +180,9 @@ export const PitchVisualizer: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleTogglePlay}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-semibold rounded transition-colors"
+                  disabled={!active || reducedMotion}
+                  title={reducedMotion ? 'Animation is disabled for reduced motion. The complete route is shown on the pitch.' : undefined}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-semibold rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isPlaying ? (
                     <>

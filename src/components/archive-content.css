@@ -1,0 +1,43 @@
+.archive-content {
+  color: #0f2942;
+}
+
+section.archive-content h2::after {
+  content: '';
+  display: block;
+  width: 76px;
+  height: 4px;
+  margin-top: 18px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #75aadb 0 58%, #154284 58% 79%, #a50044 79%);
+}
+
+.archive-content :is(button, a, input):focus-visible {
+  outline: 3px solid #0284c7;
+  outline-offset: 3px;
+}
+
+.archive-content button {
+  touch-action: manipulation;
+}
+
+.archive-content input::placeholder {
+  color: #64748b;
+}
+
+.archive-content table {
+  font-variant-numeric: tabular-nums;
+}
+
+.archive-content dialog::backdrop,
+dialog.archive-content::backdrop {
+  background: rgb(15 41 66 / 42%);
+  backdrop-filter: blur(8px);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .archive-content button {
+    transition-duration: 180ms;
+    transition-timing-function: ease-out;
+  }
+}
