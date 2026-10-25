@@ -15,6 +15,7 @@ import { GlobalSearchOverlay } from './components/GlobalSearchOverlay';
 import { IconicMoment } from './data/messi-data';
 import { SearchIndexItem } from './utils/searchIndex';
 import { LegacyLab } from './components/LegacyLab';
+import { LatestCoverage } from './components/LatestCoverage';
 import { soundFx } from './utils/audio';
 import { sectionFromHash } from './utils/navigation';
 
@@ -154,7 +155,8 @@ export default function App() {
           onNavigate={handleNavigate}
           onOpenSearch={() => setIsSearchOpen(true)}
         />
-        <p className="archive-status">An evolving fan archive, not a live data feed. Historical statistics and stories are preserved from the original project.</p>
+        <p className="archive-status">An independent fan archive. Historical statistics are preserved from the original project; the coverage below refreshes separately from a credited publisher.</p>
+        <LatestCoverage />
         <AchievementTimeline
           onNavigate={handleNavigate}
           onSyncSeasonFilter={handleSyncSeason}

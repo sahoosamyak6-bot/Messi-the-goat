@@ -1,8 +1,9 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
 import { IconicMoment } from '../data/messi-data';
 import { getMomentPhoto } from '../data/moment-photos';
-import { X, Play, ExternalLink, Calendar, MapPin, Quote, Activity, ImageOff } from 'lucide-react';
+import { X, Calendar, MapPin, Quote, Activity, ImageOff } from 'lucide-react';
 import { soundFx } from '../utils/audio';
+import { InlineHighlight } from './InlineHighlight';
 
 interface MomentModalProps {
   moment: IconicMoment | null;
@@ -37,7 +38,7 @@ export const MomentModal: React.FC<MomentModalProps> = ({ moment, onClose }) => 
   const containKeyboardFocus = (event: React.KeyboardEvent<HTMLDialogElement>) => {
     if (event.key !== 'Tab') return;
     const focusable = Array.from(event.currentTarget.querySelectorAll<HTMLElement>(
-      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), iframe, [tabindex]:not([tabindex="-1"])',
     )).filter((element) => element.tabIndex >= 0 && element.getClientRects().length > 0);
     const first = focusable[0];
     const last = focusable.at(-1);
@@ -98,6 +99,13 @@ export const MomentModal: React.FC<MomentModalProps> = ({ moment, onClose }) => 
           </button>
         </div>
 
+        <InlineHighlight
+          key={moment.id}
+          momentId={moment.id}
+          momentTitle={moment.title}
+          fallbackUrl={moment.videoQueryUrl}
+        />
+
         {/* Context image: never presented as a photograph of this specific event. */}
         <figure>
           <div className="relative h-64 sm:h-72 w-full overflow-hidden bg-slate-900">
@@ -105,7 +113,7 @@ export const MomentModal: React.FC<MomentModalProps> = ({ moment, onClose }) => 
               <div className="h-full w-full flex flex-col items-center justify-center gap-3 px-6 text-center text-sky-100" role="img" aria-label={`Archive photograph unavailable. ${photo.alt}`}>
                 <ImageOff className="w-8 h-8" aria-hidden="true" />
                 <span className="text-sm">Archive photograph unavailable</span>
-                <span className="text-xs text-slate-300">The moment’s story and video link are available below.</span>
+                <span className="text-xs text-slate-300">The moment’s story and video archive are still available.</span>
               </div>
             ) : (
               <img
@@ -204,17 +212,6 @@ export const MomentModal: React.FC<MomentModalProps> = ({ moment, onClose }) => 
 
           {/* Action Row */}
           <div className="pt-4 border-t border-sky-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-            <a
-              href={moment.videoQueryUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-1 py-3 px-4 bg-slate-950 hover:bg-sky-950 text-white text-xs font-bold uppercase tracking-wider rounded transition-colors flex items-center justify-center gap-2 shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2"
-            >
-              <Play className="w-4 h-4 fill-current" />
-              <span>Find Video Highlights</span>
-              <ExternalLink className="w-3.5 h-3.5" />
-            </a>
-
             <button
               type="button"
               onClick={onClose}

@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useId } from 'react';
 import { ICONIC_MOMENTS, IconicMoment } from '../data/messi-data';
 import { getMomentPhoto } from '../data/moment-photos';
-import { Play, Sparkles, ExternalLink, Eye, Search, ImageOff } from 'lucide-react';
+import { getHighlightVideo } from '../data/highlight-videos';
+import { Play, Sparkles, Eye, Search, ImageOff } from 'lucide-react';
 import { soundFx } from '../utils/audio';
 
 interface IconicGalleryProps {
@@ -52,7 +53,7 @@ export const IconicGallery: React.FC<IconicGalleryProps> = ({ onSelectMoment }) 
             From the teenage lob assisted by Ronaldinho to the 91st goal of 2012, the Bernabéu shirt display, and the golden World Cup lift at Lusail.
           </p>
           <p className="mt-3 text-xs text-slate-500 leading-relaxed">
-            Real archive photography sets the scene. Each image is identified below and is not presented as a photograph of the specific moment.
+            Real archive photography sets the scene. Each image is identified below and is not presented as a photograph of the specific moment. Selected official archive videos play here, with source links retained for availability restrictions.
           </p>
         </div>
 
@@ -175,17 +176,15 @@ export const IconicGallery: React.FC<IconicGalleryProps> = ({ onSelectMoment }) 
                       >
                         Tactical Analysis
                       </button>
-                      <a
-                        href={moment.videoQueryUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label={`Find video highlights for ${moment.title} (opens in a new tab)`}
+                      <button
+                        type="button"
+                        onClick={() => handleOpenMoment(moment)}
+                        aria-label={`${getHighlightVideo(moment.id) ? 'Watch inline video' : 'Open video archive'} for ${moment.title}`}
                         className="min-h-10 py-2 px-3 text-xs font-semibold bg-sky-50 hover:bg-sky-100 text-sky-800 rounded-lg border border-sky-200 transition-colors flex items-center justify-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 focus-visible:ring-offset-2"
                       >
                         <Play className="w-3.5 h-3.5 fill-current" aria-hidden="true" />
-                        <span>Video</span>
-                        <ExternalLink className="w-3 h-3 opacity-70" aria-hidden="true" />
-                      </a>
+                        <span>{getHighlightVideo(moment.id) ? 'Watch here' : 'Video archive'}</span>
+                      </button>
                     </div>
                   </div>
                 </div>

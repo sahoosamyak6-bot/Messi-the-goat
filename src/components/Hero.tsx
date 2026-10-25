@@ -15,7 +15,7 @@ export function Hero({ onNavigate, onOpenSearch }: HeroProps) {
     <section className="hero section-anchor" id="hero" tabIndex={-1} aria-labelledby="hero-title">
       <div className="hero-copy">
         <div className="eyebrow"><span className="argentina-flag" /> LIONEL ANDRÉS MESSI</div>
-        <h1 id="hero-title">Made of<br /><em>magic.</em><span className="hero-star" aria-hidden="true">✳</span></h1>
+        <h1 id="hero-title">Made of<br /><em>magic.</em><span className="hero-star" aria-hidden="true">✳︎</span></h1>
         <p className="hero-lead">A boy from Rosario. A left foot like no other.<br className="desktop-break" /> A story that belongs to the beautiful game.</p>
         <div className="hero-actions">
           <button className="button button-primary" onClick={() => onNavigate('gallery')}>Relive the moments <ArrowUpRight size={18} /></button>

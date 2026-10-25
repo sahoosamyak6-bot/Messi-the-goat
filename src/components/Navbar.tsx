@@ -5,7 +5,7 @@ import { soundFx } from '../utils/audio';
 
 interface NavbarProps { activeSection: string; onNavigate: (id: string) => void; onOpenSearch: () => void; }
 const navigation = [
-  ['Biography', 'biography'], ['Timeline', 'career-timeline'], ['Statistics', 'statistics'],
+  ['Coverage', 'news'], ['Biography', 'biography'], ['Timeline', 'career-timeline'], ['Statistics', 'statistics'],
   ['In pictures', 'gallery'], ['The lab', 'lab'], ['Honours', 'trophies'],
 ] as const;
 
