@@ -71,7 +71,7 @@ For UI changes, manually check desktop and mobile navigation, browser Back/Forwa
 
 ## Content and assets
 
-Statistics and editorial archive material are bundled snapshots, not a live feed. Verify new factual claims against reliable sources before updating them, and keep their dates and scope clear. Five real photographs are hosted locally in `public/photos/` as optimized WebP files. Their source, creator, Creative Commons license, and adaptation notices are in `public/photos/CREDITS.md` and the visible site footer. Gallery photographs are explicitly labeled as contextual archive imagery when they do not depict the named event. Keep those notices when reusing the images; the CC BY-SA photograph retains its share-alike license. This is an unofficial fan project, not an official player, club, or competition site.
+Statistics and editorial archive material are bundled snapshots, not a live feed. Verify new factual claims against reliable sources before updating them, and keep their dates and scope clear. Twelve real photographs are hosted locally in `public/photos/` as optimized WebP files. Their source, creator, Creative Commons license, and adaptation notices are in `public/photos/CREDITS.md` and the visible site footer. Gallery photographs are explicitly labeled as contextual archive imagery when they do not depict the named event. Keep those notices when reusing the images; the CC BY-SA photograph retains its share-alike license. This is an unofficial fan project, not an official player, club, or competition site.
 
 ## On-site coverage and video
 

@@ -22,21 +22,21 @@ const argentina2022: MomentPhoto = {
 };
 
 const momentPhotos: Record<string, MomentPhoto> = {
-  'ronaldinho-piggyback': barcelona2011,
-  'ankara-messi': barcelona2011,
-  'rome-header': barcelona2015,
+  'ronaldinho-piggyback': { photo: photoAssets.barcelona2007, contextLabel: 'Archive context: Barcelona at Levante in 2007, not Messi’s first goal in 2005.' },
+  'ankara-messi': { photo: photoAssets.barcelona2007, contextLabel: 'Archive context: Barcelona at Levante in 2007, not the Getafe goal.' },
+  'rome-header': { photo: photoAssets.barcelona2009, contextLabel: 'Archive context: a corner at Camp Nou in 2009, not the Rome final.' },
   'bernabeu-solo-2011': barcelona2011,
-  'record-91-goals': barcelona2011,
+  'record-91-goals': { photo: photoAssets.barcelona2012, contextLabel: 'Archive context: Barcelona vs Bayer Leverkusen in 2012, not the record-breaking goal.' },
   'boateng-chip-neuer': barcelona2015,
-  'bernabeu-shirt-500': barcelona2015,
+  'bernabeu-shirt-500': { photo: photoAssets.barcelona2017, contextLabel: 'Archive context: Barcelona vs PSG in 2017, not the Bernabéu shirt celebration.' },
   'maracana-2021': argentina2022,
   'lusail-world-cup-2022': {
     photo: photoAssets.hero,
     contextLabel: 'Archive context: Messi at the 2022 World Cup, not the final or trophy ceremony.',
   },
   'miami-freekick-debut': {
-    photo: photoAssets.hero,
-    contextLabel: 'Archive portrait: Messi with Argentina in 2022, not his Inter Miami debut.',
+    photo: photoAssets.miami2025,
+    contextLabel: 'Archive context: Messi with Inter Miami against New York City FC in 2025, not his 2023 debut.',
   },
 };
 

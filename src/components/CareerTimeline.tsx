@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { getCareerPhoto } from '../data/archive-photos';
+import { photoSrcSet } from '../data/photo-assets';
 import { TIMELINE_YEAR_ITEMS } from '../data/messi-data';
 import { TimelineYearItem } from '../types/messi';
 import {
@@ -32,6 +34,7 @@ export const CareerTimeline: React.FC<CareerTimelineProps> = ({
 }) => {
   const [selectedYear, setSelectedYear] = useState<number>(() => resolveCareerYear(TIMELINE_YEAR_ITEMS, externalSelectedYear ?? 2022));
   const [activeEraFilter, setActiveEraFilter] = useState<CareerEra>('all');
+  const [failedPhotos, setFailedPhotos] = useState<Set<string>>(() => new Set());
   const [milestoneKind, setMilestoneKind] = useState<MilestoneKind | 'All'>('All');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -44,6 +47,8 @@ export const CareerTimeline: React.FC<CareerTimelineProps> = ({
 
   const selectedItem: TimelineYearItem =
     TIMELINE_YEAR_ITEMS.find((item) => item.year === selectedYear) || TIMELINE_YEAR_ITEMS[18];
+
+  const careerPhoto = getCareerPhoto(selectedItem.year, selectedItem.club);
 
   const filteredYears = filterCareerYears(TIMELINE_YEAR_ITEMS, activeEraFilter);
   const selectedIndex = filteredYears.findIndex(item => item.year === selectedYear);
@@ -302,6 +307,17 @@ export const CareerTimeline: React.FC<CareerTimelineProps> = ({
 
           {/* Right Column: Statistics & Silverware (5 cols) */}
           <div className="lg:col-span-5 space-y-6">
+            {careerPhoto && <figure className="overflow-hidden rounded-2xl border border-sky-100 bg-sky-50">
+              {failedPhotos.has(careerPhoto.photo.src) ? <p className="p-8 text-sm text-slate-600">Archive photograph unavailable. {careerPhoto.photo.alt}</p> : <img key={careerPhoto.photo.src} src={careerPhoto.photo.src} srcSet={photoSrcSet(careerPhoto.photo)}
+                sizes="(max-width: 1023px) calc(100vw - 80px), 440px"
+                width={careerPhoto.photo.width} height={careerPhoto.photo.height} alt={careerPhoto.photo.alt}
+                loading="lazy" decoding="async" onError={() => setFailedPhotos(previous => new Set(previous).add(careerPhoto.photo.src))} className="w-full max-h-80 object-contain bg-slate-950" />}
+              <figcaption className="p-4 text-xs leading-relaxed text-slate-600">
+                <strong className="block mb-1 text-[#154284]">Archive photograph · {careerPhoto.year}</strong>
+                <p>{careerPhoto.caption} This photograph provides career context, not a record of every event in the selected season.</p>
+                <p className="mt-2"><a className="underline underline-offset-2" href={careerPhoto.photo.sourceUrl} target="_blank" rel="noreferrer">{careerPhoto.photo.credit}</a> · <a className="underline underline-offset-2" href={careerPhoto.photo.licenseUrl} target="_blank" rel="noreferrer">{careerPhoto.photo.license}</a></p>
+              </figcaption>
+            </figure>}
             {/* Quick Year Stats Grid */}
             <div className="bg-white p-6 rounded-2xl border border-sky-100 shadow-sm">
               <div className="flex items-center justify-between border-b border-sky-100 pb-3 mb-4">
