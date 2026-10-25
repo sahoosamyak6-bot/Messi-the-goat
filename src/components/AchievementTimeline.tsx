@@ -3,6 +3,14 @@ import { ACHIEVEMENT_TIMELINE_ITEMS } from '../data/messi-data';
 import { sortAchievementsChronologically } from '../utils/stats-calculator';
 import { calculateStaggerDelay, getRevealStyle } from '../utils/animation-helpers';
 import {
+  calculateScrollTrophyCount,
+  calculateSectionScrollProgress,
+  getTrophyTierLabel,
+  getNextTrophyCount,
+  TROPHY_ARCHIVE_YEAR,
+  TOTAL_MAJOR_TROPHIES,
+} from '../utils/trophy-counter';
+import {
   Trophy,
   Award,
   Target,
@@ -43,8 +51,28 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
   const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [isSectionInView, setIsSectionInView] = useState(false);
   const [visibleItems, setVisibleItems] = useState<Record<string, boolean>>({});
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(() =>
+    typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  );
   const [animationKey, setAnimationKey] = useState(0);
+
+  // This count is illustrative reading progress, not a trophy total per milestone.
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const targetTrophyCount = calculateScrollTrophyCount(scrollProgress);
+  const [displayedTrophyCount, setDisplayedTrophyCount] = useState(0);
+  const displayedCountRef = useRef(0);
+  const counterRef = useRef<HTMLDivElement>(null);
+  const [headerHeight, setHeaderHeight] = useState(98);
+  const [isDocumentVisible, setIsDocumentVisible] = useState(() =>
+    typeof document === 'undefined' || !document.hidden
+  );
+  const [pendingArchiveJump, setPendingArchiveJump] = useState(false);
+
+  useEffect(() => {
+    const updateVisibility = () => setIsDocumentVisible(!document.hidden);
+    document.addEventListener('visibilitychange', updateVisibility);
+    return () => document.removeEventListener('visibilitychange', updateVisibility);
+  }, []);
 
   // Detect user preference for reduced motion
   useEffect(() => {
@@ -121,6 +149,92 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
       itemObserver.disconnect();
     };
   }, [animationKey]);
+
+  // Coalesce measurements and remeasure when the viewport, header, or content
+  // changes. Observing the page also catches shifts caused by content above us.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    let frameId: number | null = null;
+    const measure = () => {
+      frameId = null;
+      if (document.hidden || !sectionRef.current) return;
+      const rect = sectionRef.current.getBoundingClientRect();
+      const navOffset = document.querySelector('header')?.getBoundingClientRect().height ?? 98;
+      setHeaderHeight(navOffset);
+      setScrollProgress(calculateSectionScrollProgress(
+        window.scrollY, window.scrollY + rect.top, rect.height, window.innerHeight, navOffset
+      ));
+    };
+    const scheduleMeasure = () => {
+      if (!document.hidden && frameId === null) frameId = window.requestAnimationFrame(measure);
+    };
+    const handleVisibility = () => {
+      if (document.hidden && frameId !== null) {
+        window.cancelAnimationFrame(frameId);
+        frameId = null;
+      } else {
+        scheduleMeasure();
+      }
+    };
+    const resizeObserver = typeof ResizeObserver !== 'undefined'
+      ? new ResizeObserver(scheduleMeasure)
+      : null;
+    [sectionRef.current, document.querySelector('header'), document.body].forEach((element) => {
+      if (element) resizeObserver?.observe(element);
+    });
+    window.addEventListener('scroll', scheduleMeasure, { passive: true });
+    window.addEventListener('resize', scheduleMeasure);
+    document.addEventListener('visibilitychange', handleVisibility);
+    scheduleMeasure();
+    return () => {
+      if (frameId !== null) window.cancelAnimationFrame(frameId);
+      resizeObserver?.disconnect();
+      window.removeEventListener('scroll', scheduleMeasure);
+      window.removeEventListener('resize', scheduleMeasure);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, []);
+
+  // Stop at the target rather than maintaining a permanent animation loop.
+  // A hidden tab schedules no animation; reduced motion updates immediately.
+  useEffect(() => {
+    if (!isDocumentVisible) return;
+    if (prefersReducedMotion) {
+      displayedCountRef.current = targetTrophyCount;
+      setDisplayedTrophyCount(targetTrophyCount);
+      return;
+    }
+    if (displayedCountRef.current === targetTrophyCount) return;
+
+    let frameId: number | null = null;
+    const step = () => {
+      frameId = null;
+      if (document.hidden) return;
+      const next = getNextTrophyCount(displayedCountRef.current, targetTrophyCount);
+      displayedCountRef.current = next;
+      setDisplayedTrophyCount(next);
+      if (next !== targetTrophyCount) frameId = window.requestAnimationFrame(step);
+    };
+    frameId = window.requestAnimationFrame(step);
+    return () => {
+      if (frameId !== null) window.cancelAnimationFrame(frameId);
+    };
+  }, [targetTrophyCount, prefersReducedMotion, isDocumentVisible]);
+
+  // Restore a filtered-out archive milestone before scrolling, and keep it
+  // below both sticky bars on small as well as large screens.
+  useEffect(() => {
+    if (!pendingArchiveJump) return;
+    const archiveItem = document.getElementById('ach-46-trophies');
+    if (archiveItem) {
+      const counterHeight = counterRef.current?.getBoundingClientRect().height ?? 0;
+      window.scrollTo({
+        top: window.scrollY + archiveItem.getBoundingClientRect().top - headerHeight - counterHeight - 16,
+        behavior: prefersReducedMotion ? 'auto' : 'smooth',
+      });
+    }
+    setPendingArchiveJump(false);
+  }, [pendingArchiveJump, headerHeight, prefersReducedMotion, selectedCategory]);
 
   // Replay animation handler
   const handleReplayAnimation = () => {
@@ -252,17 +366,89 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
     return items;
   }, [sortDirection, selectedCategory]);
 
+  const tierInfo = getTrophyTierLabel(displayedTrophyCount);
+
   return (
     <section
       ref={sectionRef}
       id="achievement-timeline"
-      className="archive-content scroll-mt-24 py-16 sm:py-24 bg-sky-50/70 border-b border-sky-100 relative overflow-hidden"
+      style={{ paddingTop: 0 }}
+      className="archive-content scroll-mt-24 pb-16 sm:pb-24 pt-0 bg-sky-50/70 border-b border-sky-100 relative"
     >
-      {/* Background ambient lighting */}
-      <div className="absolute inset-0 pointer-events-none">
+      {/* Clip decorative lighting, not the sticky counter's scroll container. */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
         <div className="absolute top-1/4 right-1/4 w-[600px] h-[400px] bg-sky-200/20 rounded-full blur-3xl" />
         <div className="absolute bottom-1/3 left-1/4 w-[500px] h-[350px] bg-sky-500/5 rounded-full blur-3xl" />
         <div className="absolute inset-0 bg-[radial-gradient(#75aadb_1px,transparent_1px)] [background-size:28px_28px] opacity-20" />
+      </div>
+
+      {/* Persistent illustrative count-up; the archive total stays visible. */}
+      <div
+        ref={counterRef}
+        role="region"
+        aria-label="Illustrative trophy count-up, 46-title archive through 2024"
+        style={{ top: `${headerHeight}px` }}
+        className="sticky z-30 w-full bg-white/95 backdrop-blur-md border-b border-sky-200 shadow-lg shadow-sky-900/5 py-3 px-4 sm:px-6 mb-10"
+      >
+        <div className="max-w-6xl mx-auto flex items-center justify-between gap-3 sm:gap-4 flex-wrap sm:flex-nowrap">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-sky-50 border border-sky-200 flex items-center justify-center text-[#154284] shrink-0" aria-hidden="true">
+              <Trophy className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex items-baseline gap-1.5 flex-wrap">
+                <span className="text-xl sm:text-2xl font-black font-sans text-[#154284] tabular-nums tracking-tight">
+                  {displayedTrophyCount}
+                </span>
+                <span className="text-sm font-mono font-semibold text-slate-600">
+                  / {TOTAL_MAJOR_TROPHIES}
+                </span>
+                <span className="text-[11px] sm:text-xs font-mono uppercase tracking-wide text-slate-700 font-semibold sm:ml-1">
+                  Illustrative count-up
+                </span>
+              </div>
+              <p className="text-[10px] sm:text-[11px] font-mono text-slate-600">
+                {TOTAL_MAJOR_TROPHIES}-title archive through {TROPHY_ARCHIVE_YEAR} · Not a live total
+              </p>
+              <p className="text-[10px] font-mono text-slate-500 hidden md:block">{tierInfo.tagline}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 ml-auto sm:ml-0">
+            <div className="hidden lg:flex flex-col items-end">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500">Reading progress</span>
+              <span className="text-xs font-mono font-bold text-[#154284] tabular-nums">{Math.round(scrollProgress * 100)}%</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                soundFx.playClickTone();
+                setSelectedCategory('all');
+                setExpandedItems((previous) => ({ ...previous, 'ach-46-trophies': true }));
+                setPendingArchiveJump(true);
+              }}
+              className="px-3 py-2 rounded-lg bg-sky-50 hover:bg-sky-100 border border-sky-200 text-[#154284] text-xs font-mono font-medium transition-colors flex items-center gap-1.5"
+              title="Jump to the historical 46-title milestone from 2024"
+            >
+              <Trophy className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>2024 milestone</span>
+            </button>
+          </div>
+        </div>
+
+        <div
+          role="progressbar"
+          aria-label="Achievement section reading progress, not historical trophy totals"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(scrollProgress * 100)}
+          className="absolute bottom-0 left-0 right-0 h-0.5 bg-sky-100"
+        >
+          <div
+            className="h-full bg-gradient-to-r from-[#154284] to-sky-400 motion-safe:transition-[width] motion-safe:duration-200"
+            style={{ width: `${scrollProgress * 100}%` }}
+          />
+        </div>
       </div>
 
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -283,7 +469,7 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
               Achievement Timeline
             </h2>
             <p className="mt-3 text-slate-600 text-sm sm:text-base lg:text-lg font-normal max-w-2xl leading-relaxed text-balance">
-              A chronological vertical chronicle of Lionel Messi&rsquo;s six defining career accomplishments — from breaking international records to the World Cup crown and an unprecedented 46th trophy.
+              A chronological vertical chronicle of Lionel Messi&rsquo;s six defining career accomplishments — from breaking international records to the World Cup crown and the historical 46-title snapshot in 2024.
             </p>
           </div>
 
@@ -415,7 +601,7 @@ export const AchievementTimeline: React.FC<AchievementTimelineProps> = ({
                   itemRefs.current[item.id] = el;
                 }}
                 style={revealStyle}
-                className="relative group transition-all"
+                className="scroll-mt-40 relative group transition-all"
               >
                 {/* Timeline Node Marker accurately centered on the spine with pulse on reveal */}
                 <div
