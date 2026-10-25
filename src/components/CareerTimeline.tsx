@@ -71,15 +71,22 @@ export const CareerTimeline: React.FC<CareerTimelineProps> = ({
     }
   };
 
-  // Auto-scroll selected year button into view
+  // Center the selected year inside its rail without scrolling the page.
   useEffect(() => {
-    if (scrollContainerRef.current) {
-      const activeBtn = scrollContainerRef.current.querySelector(`[data-year="${selectedYear}"]`);
-      if (activeBtn) {
-        activeBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-      }
-    }
-  }, [selectedYear]);
+    const container = scrollContainerRef.current;
+    const activeBtn = container?.querySelector<HTMLElement>(`[data-year="${selectedYear}"]`);
+    if (!container || !activeBtn) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const buttonRect = activeBtn.getBoundingClientRect();
+    const centeredLeft = container.scrollLeft + buttonRect.left - containerRect.left
+      + (buttonRect.width - container.clientWidth) / 2;
+
+    container.scrollTo({
+      left: Math.max(0, centeredLeft),
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
+    });
+  }, [selectedYear, activeEraFilter]);
 
   return (
     <section id="career-timeline" className="archive-content scroll-mt-24 py-20 bg-sky-50/70 border-b border-sky-100 relative">
