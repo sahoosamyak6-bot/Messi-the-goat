@@ -10,6 +10,7 @@ export function calculateCareerTotals(stats: CareerYearStat[]) {
       acc.totalFreeKicks += curr.freeKickGoals;
       acc.totalPenalties += curr.penaltyGoals;
       acc.totalHatTricks += curr.hatTricks;
+      acc.goalContribution += curr.goals + curr.assists;
       return acc;
     },
     {
@@ -123,11 +124,24 @@ export function recordPollVote(
   previousVoteId?: string | null
 ): Record<string, number> {
   const updated = { ...currentVotes };
+  if (previousVoteId === goalId) return updated;
   if (previousVoteId && previousVoteId !== goalId && updated[previousVoteId] !== undefined) {
     updated[previousVoteId] = Math.max(0, updated[previousVoteId] - 1);
   }
   updated[goalId] = (updated[goalId] || 0) + 1;
   return updated;
+}
+
+/** Rebuild the device-local demo from its baseline and at most one valid vote. */
+export function getLocalPollResults(
+  baseVotes: Record<string, number>,
+  selectedGoalId: string | null
+): Record<string, number> {
+  const votes = { ...baseVotes };
+  if (selectedGoalId && Object.hasOwn(votes, selectedGoalId)) {
+    votes[selectedGoalId] += 1;
+  }
+  return votes;
 }
 
 export function sortAchievementsChronologically<T extends { order: number; year: number }>(items: T[]): T[] {

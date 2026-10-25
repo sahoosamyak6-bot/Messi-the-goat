@@ -10,6 +10,7 @@ import {
   getGoalZone,
   calculatePollPercentages,
   recordPollVote,
+  getLocalPollResults,
   sortAchievementsChronologically,
 } from './stats-calculator.ts';
 import type { CareerYearStat, TrophyItem } from '../types/messi.ts';
@@ -75,6 +76,7 @@ test('calculateCareerTotals sums appearances, goals, and assists accurately', ()
   assert.equal(totals.totalAssists, 51);
   assert.equal(totals.totalTrophies, 5);
   assert.equal(totals.totalFreeKicks, 10);
+  assert.equal(totals.goalContribution, 215);
 });
 
 test('calculateAverages calculates per game ratios to two decimal places', () => {
@@ -153,3 +155,44 @@ test('sortAchievementsChronologically sorts items by year and order', () => {
 });
 
 
+
+test('calculateCareerTotals returns zero goal contributions for empty input', () => {
+  assert.equal(calculateCareerTotals([]).goalContribution, 0);
+});
+
+test('recordPollVote does not count a repeated selection twice', () => {
+  const initial = { g1: 10, g2: 5 };
+  const firstVote = recordPollVote(initial, 'g1');
+  assert.deepEqual(recordPollVote(firstVote, 'g1', 'g1'), { g1: 11, g2: 5 });
+  assert.deepEqual(initial, { g1: 10, g2: 5 });
+});
+
+test('local poll restores exactly one saved choice after reload', () => {
+  const baseline = { g1: 10, g2: 5 };
+  const expected = { g1: 11, g2: 5 };
+  assert.deepEqual(getLocalPollResults(baseline, 'g1'), expected);
+  assert.deepEqual(getLocalPollResults(baseline, 'g1'), expected);
+  assert.deepEqual(baseline, { g1: 10, g2: 5 });
+});
+
+test('local poll switches and clears choices without changing the baseline', () => {
+  const baseline = { g1: 10, g2: 5 };
+  assert.deepEqual(getLocalPollResults(baseline, 'g1'), { g1: 11, g2: 5 });
+  assert.deepEqual(getLocalPollResults(baseline, 'g2'), { g1: 10, g2: 6 });
+  assert.deepEqual(getLocalPollResults(baseline, null), baseline);
+  assert.deepEqual(getLocalPollResults(baseline, 'g1'), { g1: 11, g2: 5 });
+});
+
+test('local poll ignores stale or malformed saved choice IDs', () => {
+  const baseline = { g1: 0, g2: 5 };
+  for (const invalid of ['', 'removed-goal', '__proto__', 'constructor']) {
+    assert.deepEqual(getLocalPollResults(baseline, invalid), baseline);
+  }
+  assert.deepEqual(getLocalPollResults(baseline, 'g1'), { g1: 1, g2: 5 });
+  assert.deepEqual(getLocalPollResults({}, 'g1'), {});
+});
+
+test('poll percentages handle an empty poll and zero votes', () => {
+  assert.deepEqual(calculatePollPercentages({}), {});
+  assert.deepEqual(calculatePollPercentages({ g1: 0, g2: 0 }), { g1: 0, g2: 0 });
+});

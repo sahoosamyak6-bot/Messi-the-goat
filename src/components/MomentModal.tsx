@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useId, useRef } from 'react';
 import { IconicMoment } from '../data/messi-data';
-import { X, Play, ExternalLink, Calendar, MapPin, Quote, Activity, Award } from 'lucide-react';
+import { X, Play, ExternalLink, Calendar, MapPin, Quote, Activity } from 'lucide-react';
 import { soundFx } from '../utils/audio';
 
 interface MomentModalProps {
@@ -9,31 +9,65 @@ interface MomentModalProps {
 }
 
 export const MomentModal: React.FC<MomentModalProps> = ({ moment, onClose }) => {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const titleId = useId();
+
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
-    };
-    if (moment) {
-      window.addEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'hidden';
-    }
+    const dialog = dialogRef.current;
+    if (!moment || !dialog) return;
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
+    const previousOverflowPriority = document.body.style.getPropertyPriority('overflow');
+
+    // A native modal makes the background inert for keyboard and assistive technology.
+    dialog.showModal();
+    document.body.style.overflow = 'hidden';
+    closeButtonRef.current?.focus({ preventScroll: true });
+
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'unset';
+      dialog.close();
+      document.body.style.setProperty('overflow', previousOverflow, previousOverflowPriority);
+      if (previousFocus?.isConnected) previousFocus.focus({ preventScroll: true });
     };
-  }, [moment, onClose]);
+  }, [moment]);
+
+  const containKeyboardFocus = (event: React.KeyboardEvent<HTMLDialogElement>) => {
+    if (event.key !== 'Tab') return;
+    const focusable = Array.from(event.currentTarget.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    )).filter((element) => element.tabIndex >= 0 && element.getClientRects().length > 0);
+    const first = focusable[0];
+    const last = focusable.at(-1);
+    if (!first || !last) {
+      event.preventDefault();
+      event.currentTarget.focus();
+    } else if (event.shiftKey && (document.activeElement === first || document.activeElement === event.currentTarget)) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && (document.activeElement === last || document.activeElement === event.currentTarget)) {
+      event.preventDefault();
+      first.focus();
+    }
+  };
 
   if (!moment) return null;
 
   return (
-    <div
-      role="dialog"
+    <dialog
+      ref={dialogRef}
+      tabIndex={-1}
       aria-modal="true"
-      aria-labelledby="modal-moment-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-md overflow-y-auto"
-      onClick={onClose}
+      aria-labelledby={titleId}
+      className="fixed inset-0 m-0 h-dvh max-h-none w-full max-w-none open:flex items-center justify-center p-4 sm:p-6 bg-transparent text-slate-100 overflow-y-auto backdrop:bg-black/85 backdrop:backdrop-blur-md"
+      onKeyDown={containKeyboardFocus}
+      onCancel={(event) => {
+        event.preventDefault();
+        onClose();
+      }}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
     >
       <div
         className="relative bg-[#0a0f19] border border-slate-700/80 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl text-left my-8"
@@ -48,6 +82,7 @@ export const MomentModal: React.FC<MomentModalProps> = ({ moment, onClose }) => 
           </div>
 
           <button
+            ref={closeButtonRef}
             type="button"
             onClick={() => {
               soundFx.playClickTone();
@@ -98,7 +133,7 @@ export const MomentModal: React.FC<MomentModalProps> = ({ moment, onClose }) => 
               </span>
             </div>
 
-            <h3 id="modal-moment-title" className="text-2xl sm:text-3xl font-extrabold font-serif-prestige text-white leading-tight">
+            <h3 id={titleId} className="text-2xl sm:text-3xl font-extrabold font-serif-prestige text-white leading-tight">
               {moment.title}
             </h3>
 
@@ -151,7 +186,7 @@ export const MomentModal: React.FC<MomentModalProps> = ({ moment, onClose }) => 
               href={moment.videoQueryUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 py-3 px-4 bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-bold uppercase tracking-wider rounded transition-colors flex items-center justify-center gap-2 shadow-md"
+              className="flex-1 py-3 px-4 bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-bold uppercase tracking-wider rounded transition-colors flex items-center justify-center gap-2 shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
             >
               <Play className="w-4 h-4 fill-current" />
               <span>Watch Official Highlights</span>
@@ -161,13 +196,13 @@ export const MomentModal: React.FC<MomentModalProps> = ({ moment, onClose }) => 
             <button
               type="button"
               onClick={onClose}
-              className="py-3 px-5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded border border-slate-700 transition-colors"
+              className="py-3 px-5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded border border-slate-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
             >
               Close
             </button>
           </div>
         </div>
       </div>
-    </div>
+    </dialog>
   );
 };

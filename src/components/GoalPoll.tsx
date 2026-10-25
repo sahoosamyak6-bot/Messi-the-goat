@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { GOAL_POLL_ITEMS } from '../data/messi-data';
-import { calculatePollPercentages, recordPollVote } from '../utils/stats-calculator';
-import { CheckCircle2, Trophy, Flame, BarChart2, Sparkles, RotateCcw, Play, ExternalLink } from 'lucide-react';
+import { calculatePollPercentages, getLocalPollResults } from '../utils/stats-calculator';
+import { CheckCircle2, Trophy, Flame, BarChart2, RotateCcw } from 'lucide-react';
 import { soundFx } from '../utils/audio';
 import confetti from 'canvas-confetti';
 
@@ -9,25 +9,54 @@ interface GoalPollProps {
   onOpenGoalTactical?: (goalId: string) => void;
 }
 
+const STORAGE_KEY = 'messi_fan_goal_vote';
+const BASE_VOTES = Object.fromEntries(GOAL_POLL_ITEMS.map((item) => [item.id, item.initialVotes]));
+
+function validChoice(value: string | null): string | null {
+  return value && Object.hasOwn(BASE_VOTES, value) ? value : null;
+}
+
+function readSavedChoice() {
+  try {
+    return { userVote: validChoice(localStorage.getItem(STORAGE_KEY)), canPersist: true };
+  } catch {
+    return { userVote: null, canPersist: false };
+  }
+}
+
 export const GoalPoll: React.FC<GoalPollProps> = ({ onOpenGoalTactical }) => {
-  // Initialize votes from initial data + localStorage
-  const [votes, setVotes] = useState<Record<string, number>>(() => {
-    const baseVotes: Record<string, number> = {};
-    GOAL_POLL_ITEMS.forEach((item) => {
-      baseVotes[item.id] = item.initialVotes;
-    });
-    return baseVotes;
-  });
+  const [{ userVote, canPersist }, setPollState] = useState(readSavedChoice);
+  const [activePreviewId, setActivePreviewId] = useState<string>(userVote || GOAL_POLL_ITEMS[0].id);
 
-  const [userVote, setUserVote] = useState<string | null>(() => {
+  // Counts are derived, never incrementally mutated: reload, switch, and reset
+  // always mean the illustrative baseline plus at most this device's one vote.
+  const votes = useMemo(() => getLocalPollResults(BASE_VOTES, userVote), [userVote]);
+
+  useEffect(() => {
+    const syncSavedChoice = (event: StorageEvent) => {
+      if (event.key !== STORAGE_KEY && event.key !== null) return;
+      try {
+        // Browsers may deny the storage getter itself, even after mounting.
+        if (event.storageArea !== localStorage) return;
+        setPollState({ userVote: validChoice(event.newValue), canPersist: true });
+      } catch {
+        setPollState((current) => ({ ...current, canPersist: false }));
+      }
+    };
+    window.addEventListener('storage', syncSavedChoice);
+    return () => window.removeEventListener('storage', syncSavedChoice);
+  }, []);
+
+  const saveChoice = (choice: string | null) => {
+    let saved = true;
     try {
-      return localStorage.getItem('messi_fan_goal_vote');
+      if (choice) localStorage.setItem(STORAGE_KEY, choice);
+      else localStorage.removeItem(STORAGE_KEY);
     } catch {
-      return null;
+      saved = false;
     }
-  });
-
-  const [activePreviewId, setActivePreviewId] = useState<string>(GOAL_POLL_ITEMS[0].id);
+    setPollState({ userVote: choice, canPersist: saved });
+  };
 
   // Compute percentages
   const percentages = useMemo(() => {
@@ -53,22 +82,16 @@ export const GoalPoll: React.FC<GoalPollProps> = ({ onOpenGoalTactical }) => {
   }, [votes]);
 
   const handleVote = (goalId: string) => {
+    if (!validChoice(goalId) || goalId === userVote) return;
     soundFx.playBallKick();
-    const updated = recordPollVote(votes, goalId, userVote);
-    setVotes(updated);
-    setUserVote(goalId);
+    saveChoice(goalId);
     setActivePreviewId(goalId);
-
-    try {
-      localStorage.setItem('messi_fan_goal_vote', goalId);
-    } catch {
-      // LocalStorage not available
-    }
 
     // Celebratory effect
     soundFx.playCelebrationChime();
     try {
       confetti({
+        disableForReducedMotion: true,
         particleCount: 50,
         spread: 60,
         origin: { y: 0.8 },
@@ -82,17 +105,7 @@ export const GoalPoll: React.FC<GoalPollProps> = ({ onOpenGoalTactical }) => {
   const handleResetVote = () => {
     if (!userVote) return;
     soundFx.playClickTone();
-    const updated = { ...votes };
-    if (updated[userVote]) {
-      updated[userVote] = Math.max(0, updated[userVote] - 1);
-    }
-    setVotes(updated);
-    setUserVote(null);
-    try {
-      localStorage.removeItem('messi_fan_goal_vote');
-    } catch {
-      // Fallback
-    }
+    saveChoice(null);
   };
 
   const previewGoal = GOAL_POLL_ITEMS.find((g) => g.id === activePreviewId) || GOAL_POLL_ITEMS[0];
@@ -108,20 +121,20 @@ export const GoalPoll: React.FC<GoalPollProps> = ({ onOpenGoalTactical }) => {
         <div>
           <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-amber-400 mb-2">
             <Flame className="w-4 h-4 text-amber-400 inline" />
-            <span>Global Fan Verdict · Live Poll</span>
+            <span>Fan Goal Vote · Local Demo</span>
           </div>
           <h3 className="text-2xl sm:text-3xl font-extrabold font-serif-prestige text-white tracking-tight">
             The Greatest Messi Goal in History
           </h3>
           <p className="mt-1 text-slate-400 text-sm font-light">
-            Cast your ballot. From the 55-meter Ankara sprint to the Lusail World Cup Final masterpiece.
+            Choose your favorite goal. Counts start from illustrative sample votes, plus your choice on this device. This is not a live global poll.
           </p>
         </div>
 
-        {/* Live Total Ticker */}
+        {/* Illustrative Total Ticker */}
         <div className="flex items-center gap-4 bg-slate-900/80 px-4 py-2 rounded-lg border border-slate-800 self-start md:self-auto font-mono text-xs">
           <div>
-            <span className="text-slate-500 block text-[10px] uppercase">Total Votes Cast</span>
+            <span className="text-slate-500 block text-[10px] uppercase">Demo Vote Total</span>
             <span className="text-white font-bold text-sm">{totalVotes.toLocaleString()}</span>
           </div>
           <div className="h-6 w-px bg-slate-800" />
@@ -148,6 +161,7 @@ export const GoalPoll: React.FC<GoalPollProps> = ({ onOpenGoalTactical }) => {
               <div
                 key={item.id}
                 onMouseEnter={() => setActivePreviewId(item.id)}
+                onFocus={() => setActivePreviewId(item.id)}
                 className={`group relative overflow-hidden rounded-lg border transition-all ${
                   isUserChoice
                     ? 'bg-gradient-to-r from-amber-950/20 via-[#0d1624] to-[#090e18] border-amber-400 shadow-lg shadow-amber-500/10'
@@ -207,6 +221,9 @@ export const GoalPoll: React.FC<GoalPollProps> = ({ onOpenGoalTactical }) => {
                     <button
                       type="button"
                       onClick={() => handleVote(item.id)}
+                      aria-pressed={isUserChoice}
+                      aria-label={`${isUserChoice ? 'Your vote:' : 'Vote for'} ${item.title}`}
+                      aria-disabled={isUserChoice}
                       className={`px-3.5 py-2 text-xs font-semibold rounded transition-all flex items-center gap-1.5 ${
                         isUserChoice
                           ? 'bg-amber-400 text-slate-950 shadow-md font-bold'
@@ -230,10 +247,10 @@ export const GoalPoll: React.FC<GoalPollProps> = ({ onOpenGoalTactical }) => {
 
           {/* Reset / Change Vote option */}
           {userVote && (
-            <div className="flex justify-between items-center pt-3 text-xs font-mono text-slate-400">
+            <div className="flex flex-wrap gap-3 justify-between items-center pt-3 text-xs font-mono text-slate-400" role="status">
               <span className="text-emerald-400 flex items-center gap-1.5">
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                Your vote is counted and saved locally.
+                {canPersist ? 'Your choice is saved on this device.' : 'Your choice is counted for this visit. Browser storage is unavailable.'}
               </span>
               <button
                 type="button"
@@ -241,7 +258,7 @@ export const GoalPoll: React.FC<GoalPollProps> = ({ onOpenGoalTactical }) => {
                 className="text-slate-400 hover:text-white flex items-center gap-1 underline transition-colors"
               >
                 <RotateCcw className="w-3 h-3" />
-                Change My Vote
+                Clear My Vote
               </button>
             </div>
           )}
@@ -274,7 +291,7 @@ export const GoalPoll: React.FC<GoalPollProps> = ({ onOpenGoalTactical }) => {
               <span className="text-amber-400 font-bold">{previewGoal.distance}</span>
             </div>
             <div className="flex justify-between text-slate-400">
-              <span>Global Vote Share:</span>
+              <span>Demo Vote Share:</span>
               <span className="text-white font-bold">{percentages[previewGoal.id] || 0}%</span>
             </div>
           </div>

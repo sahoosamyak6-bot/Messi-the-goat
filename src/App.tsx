@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
 import { AchievementTimeline } from './components/AchievementTimeline';
@@ -19,14 +19,91 @@ export default function App() {
   const [activeSection, setActiveSection] = useState<string>('hero');
   const [selectedMoment, setSelectedMoment] = useState<IconicMoment | null>(null);
   const [syncSeasonQuery, setSyncSeasonQuery] = useState<string | undefined>(undefined);
+  const navigationFrame = useRef<number | null>(null);
 
-  const handleNavigate = (sectionId: string) => {
-    setActiveSection(sectionId);
+  const scrollToSection = useCallback((sectionId: string, behavior: ScrollBehavior, moveFocus = false) => {
     const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+    if (!element || !element.matches('main > section')) return;
+
+    if (navigationFrame.current !== null) cancelAnimationFrame(navigationFrame.current);
+    // Wait for the mobile menu to close before scrolling or moving keyboard focus.
+    navigationFrame.current = requestAnimationFrame(() => {
+      if (moveFocus) {
+        const heading = element.querySelector<HTMLElement>('h1, h2') ?? element;
+        const hadTabIndex = heading.hasAttribute('tabindex');
+        if (!hadTabIndex) {
+          heading.tabIndex = -1;
+          heading.addEventListener('blur', () => heading.removeAttribute('tabindex'), { once: true });
+        }
+        heading.focus({ preventScroll: true });
+      }
+      element.scrollIntoView({ behavior, block: 'start' });
+      setActiveSection(sectionId);
+      navigationFrame.current = null;
+    });
+  }, []);
+
+  const handleNavigate = useCallback((sectionId: string) => {
+    if (!document.getElementById(sectionId)?.matches('main > section')) return;
+    const hash = `#${encodeURIComponent(sectionId)}`;
+    if (window.location.hash !== hash) {
+      window.history.pushState(window.history.state, '', hash);
     }
-  };
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    scrollToSection(sectionId, reducedMotion ? 'instant' : 'smooth', true);
+  }, [scrollToSection]);
+
+  useEffect(() => {
+    const header = document.querySelector<HTMLElement>('[data-site-header]');
+    const main = document.getElementById('main-content');
+    const sections = Array.from(document.querySelectorAll<HTMLElement>('main > section[id]'));
+    let scrollFrame: number | null = null;
+
+    const updateActiveSection = () => {
+      scrollFrame = null;
+      const headerHeight = header?.getBoundingClientRect().height ?? 96;
+      document.documentElement.style.setProperty('--site-header-height', `${headerHeight}px`);
+      const readingLine = headerHeight + 32;
+      let current = sections[0]?.id ?? 'hero';
+      for (const section of sections) {
+        if (section.getBoundingClientRect().top <= readingLine) current = section.id;
+      }
+      if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2) {
+        current = sections.at(-1)?.id ?? current;
+      }
+      setActiveSection(current);
+    };
+    const scheduleUpdate = () => {
+      if (scrollFrame === null) scrollFrame = requestAnimationFrame(updateActiveSection);
+    };
+    const followHash = () => {
+      try {
+        scrollToSection(decodeURIComponent(window.location.hash.slice(1)) || 'hero', 'instant');
+      } catch {
+        // An invalid escaped fragment should not break the rest of the page.
+      }
+    };
+
+    updateActiveSection();
+    if (window.location.hash) followHash();
+    window.addEventListener('scroll', scheduleUpdate, { passive: true });
+    window.addEventListener('resize', scheduleUpdate);
+    window.addEventListener('hashchange', followHash);
+    window.addEventListener('popstate', followHash);
+    const resizeObserver = new ResizeObserver(scheduleUpdate);
+    if (header) resizeObserver.observe(header);
+    if (main) resizeObserver.observe(main);
+
+    return () => {
+      window.removeEventListener('scroll', scheduleUpdate);
+      window.removeEventListener('resize', scheduleUpdate);
+      window.removeEventListener('hashchange', followHash);
+      window.removeEventListener('popstate', followHash);
+      resizeObserver.disconnect();
+      if (scrollFrame !== null) cancelAnimationFrame(scrollFrame);
+      if (navigationFrame.current !== null) cancelAnimationFrame(navigationFrame.current);
+    };
+  }, [scrollToSection]);
 
   const handleSyncSeason = (seasonLabel: string) => {
     setSyncSeasonQuery(seasonLabel);
@@ -37,6 +114,7 @@ export default function App() {
       id="app"
       className="min-h-screen flex flex-col font-sans selection:bg-amber-400 selection:text-slate-950 bg-[#070b12] text-slate-100"
     >
+      <a href="#main-content" className="skip-link">Skip to main content</a>
       {/* Floating Quick-Jump Badge replacing the single rotating notification */}
       <div className="fixed right-4 bottom-6 z-40 hidden sm:block">
         <button
@@ -59,7 +137,7 @@ export default function App() {
         onNavigate={handleNavigate}
       />
 
-      <main className="flex-1">
+      <main id="main-content" tabIndex={-1} className="flex-1">
         <Hero onNavigate={handleNavigate} />
         <AchievementTimeline
           onNavigate={handleNavigate}
