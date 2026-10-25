@@ -64,6 +64,7 @@ A real shared poll would require a backend and server-side validation; this app 
 - Section links can be bookmarked and opened in a new tab. The active navigation item follows scrolling, and section offsets account for the sticky header.
 - The mobile menu supports Escape and restores focus to its toggle.
 - Gallery details use a native modal dialog with initial focus, keyboard containment, Escape/backdrop dismissal, and focus restoration.
+- The section-sharing feature from the AI Studio project is preserved. Header, footer and original-lab actions open a native dialog with direct links, optional post snippets and user-initiated sharing. Copy feedback reflects whether the clipboard operation actually succeeded; closing or switching sections cancels stale feedback. Historical share text is labeled as an archive snapshot, not current totals.
 - Reduced-motion preferences disable smooth section scrolling and decorative CSS animation. Poll confetti also respects that preference.
 
 For UI changes, manually check desktop and mobile navigation, browser Back/Forward, global search, modal Tab/Shift+Tab and dismissal, image loading, lab play/pause/scrub/auto-next and interrupted playback, plus repeated votes, reload, change, clear, and blocked-storage behavior. Unit tests and a successful build do not replace those browser checks.
@@ -85,3 +86,7 @@ Core photographs, archive content and lab assets are hosted with this app. Fresh
 ## Search indexing
 
 The canonical public URL is `https://messi-the-goat.vercel.app/`. `public/robots.txt` permits crawling and points to `public/sitemap.xml`, which lists the actual homepage, not fragment-only archive sections. Search Console ownership verification and indexing requests are separate actions; these files alone do not verify ownership or guarantee search inclusion.
+
+## Editing from Google AI Studio and GitHub
+
+The original AI Studio project is linked to this repository. Finish and preserve any running AI Studio work before pulling remote updates; inspect its GitHub sync status rather than overwriting either side. Re-fetch `main` and integrate concurrent changes before merging a preview branch. Keep Vercel's verified-commit requirement enabled: unsigned AI Studio pushes may be canceled by that gate, so publish the reviewed final tree through a supported signed GitHub commit or merge. Do not fix this by disabling security settings or force-pushing history.
