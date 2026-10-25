@@ -70,4 +70,18 @@ For UI changes, manually check desktop and mobile navigation, browser Back/Forwa
 
 ## Content and assets
 
-Statistics and editorial material are bundled snapshots, not a live feed. Verify new factual claims against reliable sources before updating them, and keep their dates and scope clear. Five real photographs are hosted locally in `public/photos/` as optimized WebP files. Their source, creator, Creative Commons license, and adaptation notices are in `public/photos/CREDITS.md` and the visible site footer. Gallery photographs are explicitly labeled as contextual archive imagery when they do not depict the named event. Keep those notices when reusing the images; the CC BY-SA photograph retains its share-alike license. Fonts and highlight links still depend on external services. This is an unofficial fan project, not an official player, club, or competition site.
+Statistics and editorial archive material are bundled snapshots, not a live feed. Verify new factual claims against reliable sources before updating them, and keep their dates and scope clear. Five real photographs are hosted locally in `public/photos/` as optimized WebP files. Their source, creator, Creative Commons license, and adaptation notices are in `public/photos/CREDITS.md` and the visible site footer. Gallery photographs are explicitly labeled as contextual archive imagery when they do not depict the named event. Keep those notices when reusing the images; the CC BY-SA photograph retains its share-alike license. This is an unofficial fan project, not an official player, club, or competition site.
+
+## On-site coverage and video
+
+`/api/messi-news` is a Vercel Node function that fetches only the fixed [Guardian Messi RSS feed](https://www.theguardian.com/football/lionel-messi/rss). The site displays up to six headlines, preserving bylines, publication dates, source links and the required credit. Combined headline text stays below 100 words; descriptions, full articles and publisher images are not redistributed. This noncommercial fan-site use follows the [Guardian Open Licence](https://www.theguardian.com/info/2022/nov/01/open-licence-terms). Reassess the licence before adding advertising or commercial features.
+
+Successful responses are cached; the visible page checks about every 30 minutes and offers a manual refresh. Article dates and the last successful feed retrieval time are separate. Coverage is not comprehensive breaking news or live scores. Source failures show an honest unavailable state, or keep previously loaded cards with a warning, without breaking the archive or lab. No API key, cron or database is required. Plain Vite development/preview serves only the frontend; use a Vercel preview deployment to exercise the function end-to-end.
+
+Six selected moments have verified official-publisher or broadcaster YouTube embeds. Videos load on demand via `youtube-nocookie.com`, never autoplay audio, and unload when the player or moment closes. Each retains an original-source link because publisher and regional restrictions can prevent playback. Other moments clearly offer archive search, not an unrelated video. Video availability was checked on 25 October 2026 and may change.
+
+Core photographs, archive content and lab assets are hosted with this app. Fresh news, embedded videos and web fonts still use external services; the site does not promise full offline operation.
+
+## Search indexing
+
+The canonical public URL is `https://messi-the-goat.vercel.app/`. `public/robots.txt` permits crawling and points to `public/sitemap.xml`, which lists the actual homepage, not fragment-only archive sections. Search Console ownership verification and indexing requests are separate actions; these files alone do not verify ownership or guarantee search inclusion.
