@@ -80,3 +80,10 @@ export const photoAssets = {
 } satisfies Record<string, PhotoAsset>;
 
 export const photoCredits: PhotoAsset[] = Object.values(photoAssets);
+
+/** Smaller same-photo derivatives; widths match the generated WebP files. */
+export const photoWidths = (photo: PhotoAsset): number[] =>
+  [320, 480, 768].filter(width => width < photo.width).concat(photo.width);
+
+export const photoSrcSet = (photo: PhotoAsset): string =>
+  photoWidths(photo).map(width => `${width === photo.width ? photo.src : photo.src.replace(/\.webp$/, `-${width}.webp`)} ${width}w`).join(', ');

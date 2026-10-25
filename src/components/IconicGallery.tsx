@@ -1,3 +1,4 @@
+import { photoSrcSet } from '../data/photo-assets';
 import React, { useState, useMemo, useId } from 'react';
 import { ICONIC_MOMENTS, IconicMoment } from '../data/messi-data';
 import { getMomentPhoto } from '../data/moment-photos';
@@ -116,6 +117,8 @@ export const IconicGallery: React.FC<IconicGalleryProps> = ({ onSelectMoment }) 
                     ) : (
                       <img
                         src={photo.src}
+                        srcSet={photoSrcSet(photo)}
+                        sizes="(max-width: 767px) calc(100vw - 32px), (max-width: 1023px) calc((100vw - 72px) / 2), (max-width: 1280px) calc((100vw - 128px) / 3), 384px"
                         alt={photo.alt}
                         width={photo.width}
                         height={photo.height}

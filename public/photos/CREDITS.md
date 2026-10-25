@@ -54,3 +54,9 @@ This photograph depicts the Argentina–Mexico group-stage match on 26 November 
 - Delivered dimensions: 1100 × 1369 pixels.
 
 The Commons source is already a derivative by CHUCAO of Christopher Johnson’s original photograph, with background retouching described on the source page. Our WebP version has no additional retouching. The image and our resize/format adaptation are distributed under the same CC BY-SA 2.0 license.
+
+## Responsive versions
+
+The `-320.webp`, `-480.webp`, and `-768.webp` variants (where smaller than the archive copy) are proportional resizes of the matching unsuffixed WebP above. They keep the same creator, source, license and existing source retouching notices. No additional retouching, subject removal, or generative changes were made. Responsive variants were encoded at WebP quality 80 using `scripts/optimize-photos.py`; original archive copies are unchanged. The Barcelona 2011 variants remain CC BY-SA 2.0. Browsers choose a variant according to viewport size and pixel density.
+
+All five Commons source pages and their stated creator/license details were rechecked on 25 October 2026. A license covers the photograph's copyright; it does not mean the photographer, depicted person, club, or agency endorses this fan site.

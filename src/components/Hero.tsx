@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ArrowDown, ArrowUpRight, CirclePlay, Search, Trophy } from 'lucide-react';
-import { photoAssets } from '../data/photo-assets';
+import { photoAssets, photoSrcSet } from '../data/photo-assets';
 
 interface HeroProps {
   onNavigate: (sectionId: string) => void;
@@ -26,11 +26,11 @@ export function Hero({ onNavigate, onOpenSearch }: HeroProps) {
       </div>
       <figure className="hero-visual">
         <div className="hero-photo-frame">
-          {photoFailed ? <div className="hero-photo photo-unavailable"><span>Argentina. Always.</span><small>The archive photograph is unavailable.</small></div> : <img src={photo.src} alt={photo.alt} width={photo.width} height={photo.height} fetchPriority="high" decoding="async" className="hero-photo" style={{ objectPosition: photo.objectPosition }} onError={() => setPhotoFailed(true)} />}
+          {photoFailed ? <div className="hero-photo photo-unavailable"><span>Argentina. Always.</span><small>The archive photograph is unavailable.</small></div> : <img src={photo.src} srcSet={photoSrcSet(photo)} sizes="(max-width: 650px) 86vw, (max-width: 1440px) 42vw, 600px" alt={photo.alt} width={photo.width} height={photo.height} fetchPriority="high" decoding="async" className="hero-photo" style={{ objectPosition: photo.objectPosition }} onError={() => setPhotoFailed(true)} />}
           <div className="hero-photo-shade" /><span className="hero-photo-label">THE NUMBER <strong>10.</strong></span><span className="hero-photo-footer">ARGENTINA. ALWAYS.</span>
         </div>
         <div className="hero-stamp"><Trophy size={20} /><span>WORLD<br /><strong>CHAMPION</strong></span><small>QATAR 2022</small></div>
-        <figcaption className="hero-side-label">WORLD CUP 2022 · PHOTO CREDITS BELOW</figcaption><span className="hero-doodle" aria-hidden="true">✦</span>
+        <figcaption className="hero-side-label">WORLD CUP 2022 · <a href="#photo-credits" onClick={() => { const credits = document.getElementById('photo-credits'); if (credits instanceof HTMLDetailsElement) credits.open = true; }}>PHOTO CREDITS</a></figcaption><span className="hero-doodle" aria-hidden="true">✦</span>
       </figure>
       <button className="scroll-cue" onClick={() => onNavigate('biography')}>SCROLL INTO THE STORY <ArrowDown size={15} /></button>
     </section>
