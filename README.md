@@ -98,3 +98,10 @@ All five original photographs are preserved. Responsive WebP variants reduce mob
 ## Expanded photographic archive
 Seven additional source-verified photographs span Barcelona (2007, 2009, 2012 and 2017), Argentina (2014), Paris Saint-Germain (2021) and Inter Miami (2025). The gallery offers full-frame enlargement, previous/next and arrow-key navigation, Escape dismissal and focus restoration. Season photos remain explicitly contextual; the Miami image is dated 2025 and is not presented as the 2023 debut. Each image has visible attribution, source and license links, with full provenance in `public/photos/CREDITS.md`. All seven new masters and 21 responsive variants together total approximately 1.53 MB; images below the fold load lazily. The original five master files are protected by SHA-256 regression tests.
 Photo review: all seven source images were visually inspected, all 28 new WebP dimensions were checked, and 149 automated tests pass. Verify desktop/mobile viewer behavior on the signed preview before merging.
+
+## Mobile usability pass
+The narrow header keeps search, sharing, sound and menu actions at 44 CSS pixels without removing features. Mobile navigation and footer links have larger touch areas; introductory copy is easier to read. Search uses a 16px input, larger clear/close controls and an independently scrolling result list. Moment details fit within dynamic viewport padding, with wrapping competition labels and a non-shrinking close button. The interactive lab retains all playbooks and playback functions with larger touch controls and readable mobile labels.
+
+Regression checks protect these layout constraints, but do not replace visual device testing. Verify the header at 320–430 CSS pixels, menu open/close and section navigation, search with a query/clear/result selection, moment dialog dismissal, photo enlargement/next/previous, and lab play/pause/scrubbing. Browser zoom/narrow-window checks are not physical iOS/Android keyboard or touch testing.
+
+Mobile release verification: the October 26, 2026 pass preserves the complete photo archive and adds six layout regression checks; 155 local tests pass.

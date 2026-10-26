@@ -165,53 +165,61 @@
   .ll-auto > span:last-child { display: block; }
   .ll-auto small { display: block; margin-top: 4px; }
 }
+/* Phone controls remain readable and operable without precise tapping. */
 @media (max-width: 560px) {
   .legacy-lab { padding: 60px 5%; }
   .ll-heading { display: block; margin-bottom: 26px; }
   .ll-heading h2 { font-size: 40px; }
-  .ll-heading > p { max-width: 340px; margin-top: 19px; font-size: 12px; }
-  .ll-eyebrow { font-size: 9px; margin-bottom: 17px; }
+  .ll-heading > p { max-width: 340px; margin-top: 19px; font-size: 14px; }
+  .ll-eyebrow { font-size: 11px; margin-bottom: 17px; }
   .ll-console { border-radius: 8px; }
-  .ll-console-bar { padding: 17px; font-size: 8px; letter-spacing: .09em; }
-  .ll-console-bar > span:last-child { font-size: 7px; letter-spacing: .02em; }
+  .ll-console-bar { flex-wrap: wrap; padding: 17px; gap: 8px; font-size: 11px; letter-spacing: .04em; }
+  .ll-console-bar > span:last-child { font-size: 11px; letter-spacing: 0; }
   .ll-console-bar > span:last-child svg { display: none; }
-  .ll-playbooks { padding: 0 13px; }
-  .ll-playbook { padding: 18px 9px; display: block; }
-  .ll-playbook:first-child { padding-left: 4px; }
-  .ll-playbook-index { display: block; margin-bottom: 10px; font-size: 9px; }
-  .ll-playbook-copy { gap: 8px; }
-  .ll-playbook-copy strong { min-height: 32px; font-size: 11px; line-height: 1.5; }
-  .ll-playbook-copy small { font-size: 6px; letter-spacing: 0; line-height: 1.7; }
-  .ll-playbook-copy small span { margin-inline: 2px; }
-  .ll-playbook > svg { display: none; }
+  .ll-playbooks { grid-template-columns: minmax(0, 1fr); padding: 0 15px; }
+  .ll-playbook, .ll-playbook:first-child { padding: 15px 0; display: flex; gap: 12px; border-right: 0; border-bottom: 1px solid #ffffff12; }
+  .ll-playbook-index { flex-shrink: 0; margin-bottom: 0; font-size: 11px; }
+  .ll-playbook-copy { min-width: 0; gap: 5px; }
+  .ll-playbook-copy strong { font-size: 14px; line-height: 1.5; }
+  .ll-playbook-copy small { font-size: 11px; letter-spacing: 0; line-height: 1.7; }
+  .ll-playbook-copy small span { margin-inline: 3px; }
+  .ll-playbook > svg { display: block; }
   .ll-main { padding: 20px 15px 23px; }
-  .ll-pitch-heading { font-size: 8px; }
-  .ll-pitch-heading > span:last-child { font-size: 7px; }
-  .ll-pitch-caption { gap: 5px; font-size: 7px; }
-  .ll-pitch-caption > span:last-child { max-width: 115px; font-size: 6px; line-height: 1.6; }
+  .ll-pitch-heading { flex-wrap: wrap; gap: 8px; font-size: 11px; }
+  .ll-pitch-heading > span:last-child { font-size: 11px; }
+  .ll-pitch-caption { flex-wrap: wrap; gap: 8px; font-size: 11px; }
+  .ll-pitch-caption > span:last-child { max-width: none; font-size: 10px; line-height: 1.6; text-align: left; }
   .ll-timeline { margin-top: 21px; }
-  .ll-controls { gap: 7px; }
+  .ll-timeline > label { font-size: 13px; }
+  .ll-timeline > label span, .ll-timeline-labels { font-size: 11px; }
+  .ll-timeline input { height: 44px; }
+  .ll-timeline input::-webkit-slider-thumb { width: 20px; height: 20px; margin-top: -8.5px; }
+  .ll-timeline input::-moz-range-thumb { width: 20px; height: 20px; }
+  .ll-controls { gap: 12px 8px; }
   .ll-controls button { height: 44px; }
-  .ll-play { flex-grow: 1; min-width: 120px; font-size: 10px !important; padding-inline: 9px; }
-  .ll-step-controls { gap: 3px; }
-  .ll-step-controls button { width: 30px; }
+  .ll-play { flex-basis: 100%; min-width: 0; font-size: 14px !important; padding-inline: 12px; }
+  .ll-step-controls { gap: 4px; }
+  .ll-step-controls button { width: 44px; }
   .ll-step-controls button:last-child { margin-left: 0; }
-  .ll-speed { font-size: 0; gap: 0; margin-left: 0; }
-  .ll-speed select { font-size: 11px; min-width: 47px; padding-inline: 2px; height: 44px; }
+  .ll-speed { font-size: 11px; gap: 6px; margin-left: auto; }
+  .ll-speed select { font-size: 16px; min-width: 56px; padding-inline: 4px; height: 44px; }
   .ll-insight { display: block; padding: 24px 20px; }
   .ll-insight h3 { font-size: 28px; max-width: 290px; }
-  .ll-match { font-size: 10px; }
+  .ll-match, .ll-match > span:not(.ll-team-marker), .ll-match-meta { font-size: 12px; }
   .ll-phase-buttons { margin-top: 20px; }
-  .ll-phase-buttons button { min-height: 46px; font-size: 12px; }
+  .ll-phase-buttons button { min-height: 46px; font-size: 14px; }
+  .ll-phase-buttons button > span { font-size: 11px; }
   .ll-phase-note { margin-top: 22px; min-height: 102px; }
-  .ll-phase-note p { font-size: 12px; }
+  .ll-phase-note > span, .ll-idea > span { font-size: 11px; }
+  .ll-phase-note p { font-size: 14px; }
   .ll-idea { margin-top: 20px; }
   .ll-bottom-bar { align-items: start; flex-direction: column; gap: 16px; padding: 18px 20px; }
-  .ll-auto { min-height: 28px; }
-  .ll-auto > span:last-child { display: flex; gap: 10px; font-size: 11px; }
-  .ll-auto small { margin-top: 0; }
-  .ll-bottom-bar > p { font-size: 9px; }
-  .ll-disclaimer { max-width: 320px; font-size: 8px; margin-top: 16px; }
+  .ll-auto { min-height: 44px; max-width: 100%; }
+  .ll-switch { flex-shrink: 0; }
+  .ll-auto > span:last-child { display: block; font-size: 13px; }
+  .ll-auto small { margin-top: 4px; font-size: 11px; }
+  .ll-bottom-bar > p { font-size: 12px; }
+  .ll-disclaimer { max-width: 400px; font-size: 12px; margin-top: 16px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .legacy-lab *, .legacy-lab *::before, .legacy-lab *::after { transition: none !important; animation: none !important; }
