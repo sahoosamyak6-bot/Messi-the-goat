@@ -75,12 +75,12 @@ export const MomentModal: React.FC<MomentModalProps> = ({ moment, onClose }) => 
       }}
     >
       <div
-        className="relative bg-white border border-sky-200 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl text-left my-8"
+        className="relative bg-white border border-sky-200 rounded-xl max-w-2xl w-full max-h-[calc(100dvh_-_32px)] sm:max-h-[calc(100dvh_-_48px)] overflow-y-auto shadow-2xl text-left overscroll-contain"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Top Bar */}
-        <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-sky-100 px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-xs font-mono text-sky-700 uppercase tracking-wider">
+        <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-sky-100 px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+          <div className="min-w-0 flex flex-wrap items-center gap-2 text-xs font-mono text-sky-700 uppercase tracking-wider">
             <span>{moment.year}</span>
             <span className="text-slate-600">·</span>
             <span>{moment.competition}</span>
@@ -94,7 +94,7 @@ export const MomentModal: React.FC<MomentModalProps> = ({ moment, onClose }) => 
               onClose();
             }}
             aria-label="Close dialog"
-            className="p-2.5 text-slate-500 hover:text-sky-900 rounded-lg hover:bg-sky-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600"
+            className="shrink-0 min-w-11 min-h-11 grid place-items-center p-2.5 text-slate-500 hover:text-sky-900 rounded-lg hover:bg-sky-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600"
           >
             <X className="w-5 h-5" />
           </button>

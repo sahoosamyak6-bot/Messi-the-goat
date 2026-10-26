@@ -23,3 +23,21 @@ main section[id],#main-content{scroll-margin-top:calc(var(--site-header-height) 
 /* Comfortable touch targets without crowding the smallest header. */
 @media (min-width:381px) and (max-width:650px){.header-tools .icon-button{width:40px;min-height:44px}.header-tools .menu-toggle{margin-left:0}}
 @media(max-width:380px){.brand-name{font-size:12px}.brand-name>span{font-size:6px}.brand{gap:8px}.header-tools .icon-button{width:31px}}
+
+/* Narrow screens keep four primary actions touch-sized without hiding features. */
+@media (max-width:650px) {
+  .site-header { padding-inline: 12px; gap: 4px; }
+  .brand { gap: 6px; flex-shrink: 0; }
+  .brand-number { width: 30px; font-size: 26px; }
+  .brand-name { font-size: 12px; }
+  .brand-name > span { font-size: 6px; letter-spacing: .1em; }
+  .header-tools .icon-button { width: 44px; min-width: 44px; min-height: 44px; }
+  .header-tools .menu-toggle { margin-left: 0; }
+  .nav-links > a, .nav-links > .mobile-nav-extra { min-height: 44px; font-size: 14px; }
+  .nav-links { max-height: calc(100dvh - var(--site-header-height) - 28px); overscroll-behavior: contain; }
+  .hero-lead { font-size: 16px; }
+  .hero-search { min-height: 44px; font-size: 12px; }
+  .hero-note p, .archive-status { font-size: 12px; }
+  .footer-index { gap: 4px 12px; font-size: 13px; }
+  .footer-index a { display: flex; align-items: center; min-height: 44px; }
+}

@@ -207,7 +207,7 @@ export const GlobalSearchOverlay: React.FC<GlobalSearchOverlayProps> = ({
       role="dialog"
       aria-modal="true"
       aria-label="Archive Global Search"
-      className="archive-content fixed inset-0 z-50 m-0 h-dvh w-full max-h-none max-w-none flex items-start justify-center pt-8 sm:pt-16 px-3 sm:px-4 pb-6 overflow-y-auto bg-transparent transition-all animate-fadeIn"
+      className="archive-content fixed inset-0 z-50 m-0 h-dvh w-full max-h-none max-w-none flex items-start justify-center p-3 sm:p-4 overflow-y-auto bg-transparent transition-all animate-fadeIn"
       onCancel={(event) => {
         event.preventDefault();
         soundFx.playClickTone();
@@ -221,11 +221,11 @@ export const GlobalSearchOverlay: React.FC<GlobalSearchOverlayProps> = ({
       }}
     >
       <div
-        className="relative w-full max-w-3xl rounded-2xl bg-white border border-sky-200 shadow-[0_24px_100px_-24px_rgba(15,48,80,0.35)] overflow-hidden flex flex-col max-h-[85vh] ring-1 ring-sky-200/60"
+        className="relative w-full max-w-3xl rounded-2xl bg-white border border-sky-200 shadow-[0_24px_100px_-24px_rgba(15,48,80,0.35)] overflow-hidden flex flex-col max-h-[calc(100dvh_-_24px)] sm:max-h-[calc(100dvh_-_32px)] ring-1 ring-sky-200/60"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Search Header Bar */}
-        <div className="relative flex items-center gap-3 px-4 sm:px-5 py-4 border-b border-sky-100 bg-sky-50/70">
+        <div className="relative flex items-center gap-2 px-3 sm:px-5 py-3 shrink-0 border-b border-sky-100 bg-sky-50/70">
           <Search className="w-5 h-5 text-[#154284] shrink-0" />
           <input
             ref={inputRef}
@@ -234,7 +234,7 @@ export const GlobalSearchOverlay: React.FC<GlobalSearchOverlayProps> = ({
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search years (e.g. 2012, 2022), trophies (World Cup, Ballon d'Or), or milestones (napkin, sextuple)..."
             aria-label="Search the archive"
-            className="w-full bg-transparent text-slate-950 placeholder-slate-500 text-sm sm:text-base font-medium focus:outline-none"
+            className="min-w-0 flex-1 w-full bg-transparent text-slate-950 placeholder-slate-500 text-base font-medium focus:outline-none"
           />
 
           {query && (
@@ -245,7 +245,7 @@ export const GlobalSearchOverlay: React.FC<GlobalSearchOverlayProps> = ({
                 setQuery('');
                 inputRef.current?.focus();
               }}
-              className="p-1 rounded-full text-slate-600 hover:text-slate-950 hover:bg-sky-100 transition-colors"
+              className="shrink-0 min-w-11 min-h-11 grid place-items-center rounded-full text-slate-600 hover:text-slate-950 hover:bg-sky-100 transition-colors"
               aria-label="Clear search query"
             >
               <X className="w-4 h-4" />
@@ -262,7 +262,7 @@ export const GlobalSearchOverlay: React.FC<GlobalSearchOverlayProps> = ({
                 soundFx.playClickTone();
                 onClose();
               }}
-              className="p-1.5 rounded-2xl text-slate-600 hover:text-slate-950 hover:bg-sky-100 transition-colors"
+              className="min-w-11 min-h-11 grid place-items-center rounded-2xl text-slate-600 hover:text-slate-950 hover:bg-sky-100 transition-colors"
               aria-label="Close search overlay"
             >
               <X className="w-5 h-5" />
@@ -271,7 +271,7 @@ export const GlobalSearchOverlay: React.FC<GlobalSearchOverlayProps> = ({
         </div>
 
         {/* Category Filter Tabs */}
-        <div className="flex items-center gap-1.5 px-4 py-2.5 overflow-x-auto whitespace-nowrap bg-sky-50/70 border-b border-sky-100 scrollbar-none">
+        <div className="flex items-center gap-1.5 px-4 py-2.5 shrink-0 overflow-x-auto whitespace-nowrap bg-sky-50/70 border-b border-sky-100 scrollbar-none">
           {categories.map((cat) => {
             const isActive = selectedCategory === cat.id;
             return (
@@ -283,7 +283,7 @@ export const GlobalSearchOverlay: React.FC<GlobalSearchOverlayProps> = ({
                   soundFx.playClickTone();
                   setSelectedCategory(cat.id);
                 }}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                className={`flex shrink-0 min-h-11 items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all ${
                   isActive
                     ? 'bg-[#154284] text-white [&_svg]:text-white font-semibold shadow-sm'
                     : 'bg-sky-50 text-slate-600 hover:text-slate-950 hover:bg-sky-100 border border-sky-100'
@@ -297,7 +297,7 @@ export const GlobalSearchOverlay: React.FC<GlobalSearchOverlayProps> = ({
         </div>
 
         {/* Results Container / Empty State */}
-        <div ref={resultsContainerRef} className="flex-1 overflow-y-auto divide-y divide-sky-100 p-2 sm:p-3">
+        <div ref={resultsContainerRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain divide-y divide-sky-100 p-2 sm:p-3">
           {query.trim() === '' ? (
             <div className="py-6 px-4 space-y-6">
               {/* Recent Searches */}
