@@ -103,3 +103,5 @@ Photo review: all seven source images were visually inspected, all 28 new WebP d
 The narrow header keeps search, sharing, sound and menu actions at 44 CSS pixels without removing features. Mobile navigation and footer links have larger touch areas; introductory copy is easier to read. Search uses a 16px input, larger clear/close controls and an independently scrolling result list. Moment details fit within dynamic viewport padding, with wrapping competition labels and a non-shrinking close button. The interactive lab retains all playbooks and playback functions with larger touch controls and readable mobile labels.
 
 Regression checks protect these layout constraints, but do not replace visual device testing. Verify the header at 320–430 CSS pixels, menu open/close and section navigation, search with a query/clear/result selection, moment dialog dismissal, photo enlargement/next/previous, and lab play/pause/scrubbing. Browser zoom/narrow-window checks are not physical iOS/Android keyboard or touch testing.
+
+Mobile release verification: the October 26, 2026 pass preserves the complete photo archive and adds six layout regression checks; 155 local tests pass.
