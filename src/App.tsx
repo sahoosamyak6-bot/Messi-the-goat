@@ -14,6 +14,7 @@ import { MomentModal } from './components/MomentModal';
 import { GlobalSearchOverlay } from './components/GlobalSearchOverlay';
 import { IconicMoment } from './data/messi-data';
 import { SearchIndexItem } from './utils/searchIndex';
+import { MessiArcade } from './components/MessiArcade';
 import { LegacyLab } from './components/LegacyLab';
 import { LatestCoverage } from './components/LatestCoverage';
 import { ShareModal } from './components/ShareModal';
@@ -201,6 +202,7 @@ export default function App() {
           <summary>Keep exploring: the original goal simulator <span>More tactics, replays and shot controls</span></summary>
           <PitchVisualizer active={originalLabOpen} onShareSection={() => handleOpenShare('pitch-visualizer')} />
         </details>
+        <MessiArcade />
         <TrophyCabinet externalTrophyId={selectedTrophyId} externalRequestKey={requestKeys.trophy} />
         <QuotesAndTrivia />
       </main>
