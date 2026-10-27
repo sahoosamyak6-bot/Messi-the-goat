@@ -17,7 +17,11 @@ import {
   Star,
 } from 'lucide-react';
 import { soundFx } from '../utils/audio';
-import { filterMilestones, formatMilestoneDate, filterCareerYears, resolveCareerYear, type CareerEra, type MilestoneKind } from '../data/career-milestones';
+import { useFavourites } from '../utils/useFavourites';
+import { FavouriteButton, FavouriteFilter } from './FavouriteControls';
+import { CAREER_MILESTONES, filterMilestones, formatMilestoneDate, filterCareerYears, resolveCareerYear, type CareerEra, type MilestoneKind } from '../data/career-milestones';
+
+const milestoneIds = CAREER_MILESTONES.map(item => item.id);
 
 interface CareerTimelineProps {
   onSyncSeasonFilter?: (seasonLabel: string) => void;
@@ -35,7 +39,11 @@ export const CareerTimeline: React.FC<CareerTimelineProps> = ({
   const [selectedYear, setSelectedYear] = useState<number>(() => resolveCareerYear(TIMELINE_YEAR_ITEMS, externalSelectedYear ?? 2022));
   const [activeEraFilter, setActiveEraFilter] = useState<CareerEra>('all');
   const [failedPhotos, setFailedPhotos] = useState<Set<string>>(() => new Set());
+  const favourites = useFavourites('messi-favourite-moments-v1', milestoneIds);
+  const [onlySavedMoments, setOnlySavedMoments] = useState(false);
   const [milestoneKind, setMilestoneKind] = useState<MilestoneKind | 'All'>('All');
+  const milestonesRef = useRef<HTMLDetailsElement>(null);
+  const visibleMilestones = filterMilestones(milestoneKind).filter(item => !onlySavedMoments || favourites.saved.includes(item.id));
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -145,20 +153,23 @@ export const CareerTimeline: React.FC<CareerTimelineProps> = ({
           </div>
         </div>
 
-        <details className="mb-8 rounded-2xl border border-sky-200 bg-white p-5 sm:p-6">
+        <details ref={milestonesRef} className="mb-8 rounded-2xl border border-sky-200 bg-white p-5 sm:p-6">
           <summary className="cursor-pointer text-lg font-bold text-[#154284]">Dated milestones · clubs, trophies &amp; matches</summary>
           <p className="mt-3 text-sm leading-relaxed text-slate-600">Selected highlights from 2004–2023, with primary sources. Dates refer to the event at its location, not the publication date or the season label below. This is not a complete trophy tally.</p>
           <div className="my-4 flex flex-wrap gap-2" aria-label="Milestone categories">
             {(['All', 'Clubs', 'Trophies', 'Matches'] as const).map(kind => <button key={kind} type="button" aria-pressed={milestoneKind === kind} onClick={() => setMilestoneKind(kind)} className={`rounded-lg border px-4 py-2 text-sm font-semibold ${milestoneKind === kind ? 'bg-[#154284] text-white border-[#154284]' : 'bg-sky-50 text-slate-700 border-sky-100'}`}>{kind}</button>)}
           </div>
-          <p className="sr-only" role="status">{filterMilestones(milestoneKind).length} {milestoneKind.toLowerCase()} milestones shown.</p>
+          <FavouriteFilter label="moments" onlySaved={onlySavedMoments} onChange={setOnlySavedMoments} count={favourites.saved.length} unavailable={favourites.unavailable} />
+          {visibleMilestones.length === 0 && <p className="favourite-empty" role="status">No saved moments in this category. Choose All moments or another category to explore and save your favourites.</p>}
+          <p className="sr-only" role="status">{visibleMilestones.length} {milestoneKind.toLowerCase()} milestones shown.</p>
           <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {filterMilestones(milestoneKind).map(item => <li key={item.id} className="rounded-xl border border-sky-100 border-l-4 border-l-[#a50044] bg-sky-50/60 p-4">
+            {visibleMilestones.map(item => <li key={item.id} className="rounded-xl border border-sky-100 border-l-4 border-l-[#a50044] bg-sky-50/60 p-4">
               <time dateTime={item.date} className="text-xs font-mono font-semibold text-[#154284]">{formatMilestoneDate(item.date)}</time>
               <h3 className="mt-2 font-bold text-slate-950">{item.title}</h3>
               <p className="mt-1 text-xs font-semibold text-sky-800">{item.team} · {item.kinds.join(' / ')}</p>
               <p className="my-3 text-sm leading-relaxed text-slate-600">{item.summary}</p>
-              <a href={item.source.url} target="_blank" rel="noreferrer" className="text-xs font-semibold text-[#154284] underline underline-offset-4">Source: {item.source.label}<span className="sr-only"> (opens in a new tab)</span></a>
+              <FavouriteButton saved={favourites.saved.includes(item.id)} onClick={() => { favourites.toggle(item.id); if (onlySavedMoments) requestAnimationFrame(() => milestonesRef.current?.querySelector<HTMLButtonElement>('.favourite-filter button[aria-pressed="true"]')?.focus({ preventScroll: true })); }} label={`career moment: ${item.title}`} />
+              <a href={item.source.url} target="_blank" rel="noreferrer" className="flex items-center min-h-11 mt-2 text-xs font-semibold text-[#154284] underline underline-offset-4">Source: {item.source.label}<span className="sr-only"> (opens in a new tab)</span></a>
             </li>)}
           </ol>
         </details>

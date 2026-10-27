@@ -71,3 +71,7 @@
 .arcade-timeline-reveal p { font-size: 12px; line-height: 1.7; margin: 10px 0 0; }
 .arcade-timeline-reveal .arcade-source { margin: 0; }
 @media (max-width: 1000px) and (min-width: 701px), (max-width: 450px) { .arcade-memory-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .arcade-memory-card > strong { font-size: 13px; } }
+.arcade-daily { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 32px; margin-bottom: 24px; border-top-color: #d0a446; }
+.arcade-daily p { font-size: 15px; line-height: 1.7; color: #456477; }
+.arcade-daily .arcade-daily-date { font: 12px/1.8 'DM Mono', monospace; overflow-wrap: anywhere; }
+@media (max-width: 700px) { .arcade-daily { grid-template-columns: minmax(0, 1fr); gap: 18px; } }

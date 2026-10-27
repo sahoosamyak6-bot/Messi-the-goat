@@ -1,26 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { eraClues, newPenaltyRound, parseRecord, reactionDelay, reactionMilliseconds, takePenalty, triviaQuestions, type Direction } from '../utils/arcade';
+import { eraClues, newPenaltyRound, reactionDelay, reactionMilliseconds, takePenalty, triviaQuestions, type Direction } from '../utils/arcade';
+import { useArcadeRecord } from '../utils/useArcadeRecord';
+import { ArcadeDaily } from './ArcadeDaily';
 import { MemoryGame, TimelineGame } from './ArcadeExtras';
+import { ArcadeShareResult } from './ArcadeShareResult';
 import './messi-arcade.css';
-
-function useLocalRecord(key: string, maximum: number, lowerIsBetter = false) {
-  const [best, setBest] = useState<number | null>(null);
-  const [unavailable, setUnavailable] = useState(false);
-  useEffect(() => {
-    try { setBest(parseRecord(localStorage.getItem(key), maximum, lowerIsBetter ? 1 : 0)); }
-    catch { setUnavailable(true); }
-  }, [key, maximum, lowerIsBetter]);
-  const save = (value: number) => {
-    const next = best === null ? value : lowerIsBetter ? Math.min(best, value) : Math.max(best, value);
-    setBest(next);
-    try { localStorage.setItem(key, String(next)); } catch { setUnavailable(true); }
-  };
-  return { best, save, unavailable };
-}
 
 function PenaltyGame() {
   const [round, setRound] = useState(newPenaltyRound);
   const [busy, setBusy] = useState(false);
+  const record = useArcadeRecord('messi-arcade-penalty-v1', 5);
+  useEffect(() => { if (round.shots === 5) record.save(round.goals); }, [round.shots, round.goals, record.save]);
   const locked = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
@@ -40,7 +30,7 @@ function PenaltyGame() {
   };
   const directions = ['Left', 'Centre', 'Right'];
   const feedback = round.shots === 0 ? 'Choose a direction to take your first shot.' : `${round.shot === round.keeper ? 'Saved!' : 'Goal!'} Keeper went ${directions[round.keeper!].toLowerCase()}. ${round.shots === 5 ? `Round complete: ${round.goals} of 5 goals.` : `${5 - round.shots} shots remaining.`}`;
-  return <article className="arcade-card" aria-labelledby="penalty-title">
+  return <article id="penalty-game" className="arcade-card section-anchor" aria-labelledby="penalty-title">
     <p className="arcade-kicker"><span aria-hidden="true">⚽</span> GAME 01 · CHANCE & CHOICE</p>
     <h3 id="penalty-title">Penalty shootout</h3>
     <p>Pick your spot. Five shots, one keeper. The keeper chooses randomly — can you beat them?</p>
@@ -53,6 +43,8 @@ function PenaltyGame() {
     <div className="arcade-directions" role="group" aria-label="Choose shot direction">{directions.map((direction, index) => <button key={direction} type="button" disabled={busy || round.shots >= 5} onKeyDown={event => { if (event.repeat) event.preventDefault(); }} onClick={() => shoot(index as Direction)}><span aria-hidden="true">{['↖', '↑', '↗'][index]}</span> {direction}</button>)}</div>
     <p className="arcade-feedback" role="status" aria-atomic="true">{feedback}</p>
     <button className="arcade-reset" type="button" onClick={reset}>Play again · Reset shots</button>
+    {round.shots === 5 && <ArcadeShareResult result={`I scored ${round.goals}/5 in the Messi Arcade penalty shootout.`} />}
+    <p className="arcade-record">Personal best: {record.best ?? '—'} / 5 goals · {record.unavailable ? 'Storage unavailable; records last for this visit.' : 'Completed rounds, saved in this browser only.'}</p>
   </article>;
 }
 
@@ -60,7 +52,7 @@ function TriviaGame() {
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<number[]>([]);
   const [complete, setComplete] = useState(false);
-  const record = useLocalRecord('messi-arcade-trivia-v1', triviaQuestions.length);
+  const record = useArcadeRecord('messi-arcade-trivia-v1', triviaQuestions.length);
   const heading = useRef<HTMLHeadingElement>(null);
   const feedback = useRef<HTMLParagraphElement>(null);
   const selected = answers[index];
@@ -80,7 +72,7 @@ function TriviaGame() {
     setIndex(0); setAnswers([]); setComplete(false);
     requestAnimationFrame(() => heading.current?.focus({ preventScroll: true }));
   };
-  return <article className="arcade-card" aria-labelledby="arcade-trivia-title">
+  return <article id="arcade-trivia-game" className="arcade-card section-anchor" aria-labelledby="arcade-trivia-title">
     <p className="arcade-kicker"><span aria-hidden="true">🧠</span> GAME 02 · KNOW THE LEGEND</p>
     <h3 id="arcade-trivia-title">Messi trivia</h3>
     <p>Eight historical questions. One point for each correct first answer. Take your time.</p>
@@ -92,6 +84,7 @@ function TriviaGame() {
     </>}
     {complete && <p className="arcade-feedback" role="status">{score === 8 ? 'Perfect round. A true archive expert!' : 'Nice round. Explore the archive and try again.'}</p>}
     <button className="arcade-reset" type="button" onClick={reset}>Restart arcade quiz</button>
+    {complete && <ArcadeShareResult result={`I scored ${score}/8 in Messi Arcade trivia.`} />}
     <p className="arcade-record">Personal best: {record.best ?? '—'} / 8 · {record.unavailable ? 'Storage unavailable; records last for this visit.' : 'Saved in this browser only.'}</p>
   </article>;
 }
@@ -103,7 +96,7 @@ function EraGame() {
   const feedback = useRef<HTMLParagraphElement>(null);
   useEffect(() => { if (answer !== null) feedback.current?.focus({ preventScroll: true }); }, [answer]);
   const clue = eraClues[index];
-  return <article className="arcade-card" aria-labelledby="era-title">
+  return <article id="era-game" className="arcade-card section-anchor" aria-labelledby="era-title">
     <p className="arcade-kicker"><span aria-hidden="true">🔎</span> GAME 03 · READ THE CLUES</p>
     <h3 id="era-title">Guess the era</h3>
     <p>Find the club, country or chapter behind each clue. No timer, just football memories.</p>
@@ -112,19 +105,21 @@ function EraGame() {
     <div className="arcade-answers" role="group" aria-labelledby="era-question">{clue.options.map((option, choice) => <button type="button" key={option} disabled={answer !== null} className={answer !== null && choice === clue.correctIndex ? 'is-correct' : answer === choice ? 'is-incorrect' : ''} onClick={() => setAnswer(previous => previous === null ? choice : previous)}>{option}{answer !== null && choice === clue.correctIndex ? ' ✓ Correct' : answer === choice ? ' — Your answer' : ''}</button>)}</div>
     <p className="arcade-feedback" role="status" ref={feedback} tabIndex={-1}>{answer === null ? 'Which chapter is it?' : answer === clue.correctIndex ? 'Correct! You know your Messi history.' : `The answer is ${clue.options[clue.correctIndex]}. Keep exploring!`}</p>
     <button className="arcade-reset" type="button" onClick={() => { setIndex((index + 1) % eraClues.length); setAnswer(null); requestAnimationFrame(() => heading.current?.focus({ preventScroll: true })); }}>{index === eraClues.length - 1 ? 'Back to first clue' : 'Next clue'}</button>
+    {answer !== null && <ArcadeShareResult result={`I ${answer === clue.correctIndex ? 'solved' : 'tried'} clue ${index + 1} in Messi Arcade’s Guess the Era challenge.`} />}
   </article>;
 }
 
 type ReactionPhase = 'idle' | 'waiting' | 'ready' | 'result';
 function ReactionGame() {
   const [phase, setPhase] = useState<ReactionPhase>('idle');
+  const [lastTime, setLastTime] = useState<number | null>(null);
   const [message, setMessage] = useState('Press Start when you are ready.');
   const phaseRef = useRef<ReactionPhase>('idle');
   const signalTime = useRef(0);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const card = useRef<HTMLElement>(null);
   const target = useRef<HTMLButtonElement>(null);
-  const record = useLocalRecord('messi-arcade-reaction-v1', 60000, true);
+  const record = useArcadeRecord('messi-arcade-reaction-v1', 60000, true);
   const changePhase = (next: ReactionPhase) => { phaseRef.current = next; setPhase(next); };
   const cancel = useCallback(() => {
     if (timer.current) clearTimeout(timer.current);
@@ -141,6 +136,7 @@ function ReactionGame() {
   }, [cancel]);
   const start = () => {
     if (phaseRef.current === 'waiting' || phaseRef.current === 'ready') return;
+    setLastTime(null);
     changePhase('waiting'); setMessage('Wait for green and “GO!” — do not press yet.');
     target.current?.focus({ preventScroll: true });
     timer.current = setTimeout(() => {
@@ -153,18 +149,19 @@ function ReactionGame() {
       changePhase('result'); setMessage('Too soon! Wait for green before pressing. Try again.');
     } else if (phaseRef.current === 'ready') {
       const elapsed = reactionMilliseconds(signalTime.current, performance.now());
-      changePhase('result');
+      changePhase('result'); setLastTime(elapsed);
       setMessage(elapsed === null ? 'Attempt expired. Start a new round.' : `${elapsed} ms. Nice reaction! Try to beat your time.`);
       if (elapsed !== null) record.save(elapsed);
     }
   };
-  return <article className="arcade-card" aria-labelledby="reaction-title" ref={card} onBlur={event => { if (event.relatedTarget instanceof Node && !event.currentTarget.contains(event.relatedTarget)) cancel(); }} onKeyDown={event => { if (event.key === 'Escape') cancel(); }}>
+  return <article id="reaction-game" className="arcade-card section-anchor" aria-labelledby="reaction-title" ref={card} onBlur={event => { if (event.relatedTarget instanceof Node && !event.currentTarget.contains(event.relatedTarget)) cancel(); }} onKeyDown={event => { if (event.key === 'Escape') cancel(); }}>
     <p className="arcade-kicker"><span aria-hidden="true">⚡</span> GAME 04 · QUICK OFF THE MARK</p>
     <h3 id="reaction-title">Reaction challenge</h3>
     <p>Wait for green and “GO!”, then tap the pad or press Space / Enter. A false start ends the attempt.</p>
     <button ref={target} type="button" className={`arcade-reaction is-${phase}`} aria-disabled={phase === 'idle' || phase === 'result'} onPointerDown={event => { if (event.isPrimary && event.button === 0) { event.preventDefault(); target.current?.focus({ preventScroll: true }); react(); } }} onClick={event => { if (event.detail === 0) react(); }} onKeyDown={event => { if ([' ', 'Enter'].includes(event.key)) { event.preventDefault(); if (!event.repeat) react(); } }}><span aria-hidden="true">{phase === 'ready' ? '⚡' : phase === 'waiting' ? '◷' : '◎'}</span><strong>{phase === 'ready' ? 'GO!' : phase === 'waiting' ? 'Wait…' : phase === 'result' ? 'Try another round' : 'Ready when you are'}</strong></button>
     <p className="arcade-feedback" role="status" aria-atomic="true">{message}</p>
     <div className="arcade-actions"><button type="button" className="arcade-primary" disabled={phase === 'waiting' || phase === 'ready'} onClick={start}>Start reaction round</button><button type="button" className="arcade-reset" disabled={phase !== 'waiting' && phase !== 'ready'} onClick={cancel}>Cancel round</button></div>
+    {phase === 'result' && lastTime !== null && <ArcadeShareResult result={`My Messi Arcade reaction time was ${lastTime} ms (device and input delays affect results).`} />}
     <p className="arcade-record">Best: {record.best === null ? 'No time yet' : `${record.best} ms`} · {record.unavailable ? 'Storage unavailable; records last for this visit.' : 'Saved in this browser only.'}</p>
     <p className="arcade-note">For fun, not a scientific test. Device and input delays affect results. Escape, moving focus away, scrolling past this card or hiding the tab cancels the round.</p>
   </article>;
@@ -173,6 +170,7 @@ function ReactionGame() {
 export function MessiArcade() {
   return <section id="games" className="messi-arcade section-anchor" aria-labelledby="arcade-title">
     <div className="arcade-container"><header className="arcade-heading"><div><p className="arcade-kicker">THE MESSI ARCADE · SIX WAYS TO PLAY</p><h2 id="arcade-title">Your turn,<br /><em>number ten.</em></h2></div><p>A little football magic, in your hands. Take a shot, test your knowledge and chase your own best — no account, no leaderboard, just play.</p></header>
+      <ArcadeDaily />
       <div className="arcade-grid"><PenaltyGame /><TriviaGame /><EraGame /><ReactionGame /><MemoryGame /><TimelineGame /></div>
       <p className="arcade-footnote">All games run on your device. Personal records are local to this browser, not shared online. The original GOAT Trivia Challenge remains in the Quotes & Trivia section.</p>
     </div>

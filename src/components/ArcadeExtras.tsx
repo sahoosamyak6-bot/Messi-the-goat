@@ -1,4 +1,6 @@
 import { useEffect, useReducer, useRef, useState } from 'react';
+import { ArcadeShareResult } from './ArcadeShareResult';
+import { useArcadeRecord } from '../utils/useArcadeRecord';
 import { formatMilestoneDate } from '../data/career-milestones';
 import { memoryReducer, moveTimelineItem, newMemoryRound, shuffleItems, timelineCorrectCount, timelineMilestones } from '../utils/arcade-extras';
 
@@ -8,10 +10,12 @@ export function MemoryGame() {
   const board = useRef<HTMLDivElement>(null);
   const waiting = state.revealed.length === 2;
   const complete = state.matched.length === state.cards.length;
+  const record = useArcadeRecord('messi-arcade-memory-v1', Number.MAX_SAFE_INTEGER, true, 4);
+  useEffect(() => { if (complete) record.save(state.turns); }, [complete, state.turns, record.save]);
   const matchedPair = waiting && state.revealed.every(id => state.matched.includes(id));
   useEffect(() => { if (waiting) feedback.current?.focus({ preventScroll: true }); }, [waiting]);
   const focusCard = () => requestAnimationFrame(() => board.current?.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus({ preventScroll: true }));
-  return <article className="arcade-card" aria-labelledby="memory-title">
+  return <article id="memory-game" className="arcade-card section-anchor" aria-labelledby="memory-title">
     <p className="arcade-kicker"><span aria-hidden="true">🏆</span> GAME 05 · REMEMBER THE SILVERWARE</p>
     <h3 id="memory-title">Trophy memory match</h3>
     <p>Reveal two cards and find four matching pairs. The symbols are playful illustrations, not official trophy images.</p>
@@ -23,6 +27,8 @@ export function MemoryGame() {
     })}</div>
     <p className="arcade-feedback" role="status" aria-atomic="true" ref={feedback} tabIndex={-1}>{complete ? `All four pairs found in ${state.turns} turns. Great memory!` : waiting ? matchedPair ? 'A match! Continue to find the next pair.' : 'Not a match. Take your time to remember them, then continue.' : state.revealed.length ? 'One card revealed. Choose a different card.' : 'Choose any two face-down cards.'}</p>
     <div className="arcade-actions">{waiting && !complete && <button type="button" className="arcade-primary" onClick={() => { dispatch({ type: 'continue' }); focusCard(); }}>Continue matching</button>}<button className="arcade-reset" type="button" onClick={() => { dispatch({ type: 'reset', cards: newMemoryRound().cards }); focusCard(); }}>Shuffle & restart memory</button></div>
+    {complete && <ArcadeShareResult result={`I matched all four Messi Arcade trophy pairs in ${state.turns} turns.`} />}
+    <p className="arcade-record">Best completed round: {record.best === null ? '—' : `${record.best} turns`} · {record.unavailable ? 'Storage unavailable; records last for this visit.' : 'Saved in this browser only.'}</p>
   </article>;
 }
 
@@ -32,11 +38,13 @@ export function TimelineGame() {
   const feedback = useRef<HTMLParagraphElement>(null);
   const list = useRef<HTMLOListElement>(null);
   const score = timelineCorrectCount(order);
+  const record = useArcadeRecord('messi-arcade-timeline-v1', 5);
+  useEffect(() => { if (checked) record.save(score); }, [checked, score, record.save]);
   const move = (from: number, to: number) => {
     setOrder(previous => moveTimelineItem(previous, from, to));
     requestAnimationFrame(() => list.current?.querySelector<HTMLElement>(`[data-milestone="${order[from]}"]`)?.focus({ preventScroll: true }));
   };
-  return <article className="arcade-card" aria-labelledby="timeline-game-title">
+  return <article id="timeline-game" className="arcade-card section-anchor" aria-labelledby="timeline-game-title">
     <p className="arcade-kicker"><span aria-hidden="true">🗓️</span> GAME 06 · PUT HISTORY IN ORDER</p>
     <h3 id="timeline-game-title">Career timeline challenge</h3>
     <p>Arrange five moments from earliest to latest. Use Up and Down — no dragging needed. Check your order when ready.</p>
@@ -49,5 +57,7 @@ export function TimelineGame() {
     })}</ol>
     <p className="arcade-feedback" role="status" aria-atomic="true" ref={feedback} tabIndex={-1}>{checked ? `${score} of 5 moments in the right position. ${score === 5 ? 'A perfectly ordered career!' : 'Dates and correct positions are now revealed. Shuffle for another try.'}` : 'Earliest at the top, latest at the bottom.'}</p>
     <div className="arcade-actions">{!checked && <button className="arcade-primary" type="button" onClick={() => { setChecked(true); requestAnimationFrame(() => feedback.current?.focus({ preventScroll: true })); }}>Check my timeline</button>}<button className="arcade-reset" type="button" onClick={() => { setOrder(shuffleItems(timelineMilestones.map(item => item.id))); setChecked(false); requestAnimationFrame(() => list.current?.querySelector<HTMLElement>('li')?.focus({ preventScroll: true })); }}>Shuffle & restart timeline</button></div>
+    {checked && <ArcadeShareResult result={`I placed ${score}/5 career moments correctly in the Messi Arcade timeline challenge.`} />}
+    <p className="arcade-record">Personal best: {record.best ?? '—'} / 5 positions · {record.unavailable ? 'Storage unavailable; records last for this visit.' : 'Checked rounds, saved in this browser only.'}</p>
   </article>;
 }

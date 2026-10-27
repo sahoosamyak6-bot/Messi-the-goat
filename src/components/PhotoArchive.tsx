@@ -2,11 +2,17 @@ import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { ArrowLeft, ArrowRight, Expand, ImageOff, X } from 'lucide-react';
 import { archivePhotos } from '../data/archive-photos';
 import { photoSrcSet } from '../data/photo-assets';
+import { useFavourites } from '../utils/useFavourites';
+import { FavouriteButton, FavouriteFilter } from './FavouriteControls';
+const photoIds = archivePhotos.map(item => item.id);
 
 /** The photographic archive is separate from the contextual iconic-moment cards. */
 export function PhotoArchive() {
+  const favourites = useFavourites('messi-favourite-photos-v1', photoIds);
+  const [onlySaved, setOnlySaved] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [failedImages, setFailedImages] = useState<Set<string>>(() => new Set());
+  const archiveRef = useRef<HTMLDivElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const headingId = useId();
@@ -27,6 +33,7 @@ export function PhotoArchive() {
       dialog.close();
       document.body.style.setProperty('overflow', previousOverflow, priority);
       if (previousFocus?.isConnected) previousFocus.focus({ preventScroll: true });
+      else archiveRef.current?.querySelector<HTMLButtonElement>('.favourite-filter button[aria-pressed="true"]')?.focus({ preventScroll: true });
     };
   }, [isOpen]);
 
@@ -55,7 +62,7 @@ export function PhotoArchive() {
   const failImage = (src: string) => setFailedImages(previous => new Set(previous).add(src));
 
   return (
-    <div className="mb-14" aria-labelledby={headingId}>
+    <div ref={archiveRef} className="mb-14" aria-labelledby={headingId}>
       <div className="flex flex-wrap items-end justify-between gap-3 mb-6 border-l-4 border-[#a50044] pl-4">
         <div>
           <p className="text-xs font-mono uppercase tracking-widest text-[#154284] mb-2">The photographic archive</p>
@@ -64,8 +71,10 @@ export function PhotoArchive() {
         </div>
         <span className="text-xs font-mono text-sky-800 rounded-full bg-sky-50 border border-sky-100 px-3 py-2">{archivePhotos.length} archive photographs</span>
       </div>
+      <FavouriteFilter label="photos" onlySaved={onlySaved} onChange={setOnlySaved} count={favourites.saved.length} unavailable={favourites.unavailable} />
+      {onlySaved && favourites.saved.length === 0 && <p className="favourite-empty" role="status">No saved photographs yet. Choose All photos, then use Save favourite on a photograph.</p>}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-        {archivePhotos.map((item, index) => (
+        {archivePhotos.map((item, index) => !onlySaved || favourites.saved.includes(item.id) ? (
           <figure key={item.id} className="min-w-0 overflow-hidden rounded-2xl border border-sky-100 bg-white shadow-sm">
             <button type="button" aria-label={`Enlarge photograph: ${item.caption}`} onClick={() => setSelectedIndex(index)}
               className="group relative block w-full aspect-[4/3] overflow-hidden bg-slate-950 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-sky-500">
@@ -84,6 +93,7 @@ export function PhotoArchive() {
             </button>
             <figcaption className="p-4">
               <p className="font-semibold text-sm leading-relaxed text-slate-900">{item.caption}</p>
+              <FavouriteButton saved={favourites.saved.includes(item.id)} onClick={() => { favourites.toggle(item.id); if (onlySaved) requestAnimationFrame(() => archiveRef.current?.querySelector<HTMLButtonElement>('.favourite-filter button[aria-pressed="true"]')?.focus({ preventScroll: true })); }} label={`photograph: ${item.caption}`} />
               <p className="mt-2 text-xs leading-relaxed text-slate-600">Photo: {item.photo.credit}</p>
               <p className="mt-1 text-xs leading-relaxed text-[#154284]">
                 <a href={item.photo.sourceUrl} target="_blank" rel="noreferrer" className="underline underline-offset-2">Original source<span className="sr-only"> (opens in a new tab)</span></a>
@@ -91,7 +101,7 @@ export function PhotoArchive() {
               </p>
             </figcaption>
           </figure>
-        ))}
+        ) : null)}
       </div>
 
       {selected && (
@@ -115,6 +125,7 @@ export function PhotoArchive() {
             </div>
             <figcaption className="p-4 sm:p-6">
               <p id={captionId} className="font-semibold leading-relaxed">{selected.caption}</p>
+              <FavouriteButton saved={favourites.saved.includes(selected.id)} onClick={() => favourites.toggle(selected.id)} label={`photograph: ${selected.caption}`} />
               <p className="mt-2 text-sm text-slate-600">Photo: {selected.photo.credit}</p>
               <p className="mt-2 text-xs leading-relaxed text-slate-600">{selected.photo.modifications}</p>
               <div className="mt-3 flex flex-wrap items-center justify-between gap-4">

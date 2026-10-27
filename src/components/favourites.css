@@ -1,0 +1,9 @@
+.favourite-toolbar { margin: 16px 0 22px; }
+.favourite-filter { display: flex; flex-wrap: wrap; gap: 8px; }
+.favourite-filter button, .favourite-button { min-height: 44px; border: 1px solid #b5d5e6; border-radius: 8px; padding: 10px 14px; color: #154284; background: #f4faff; font-size: 14px; font-weight: 700; line-height: 1.5; }
+.favourite-filter button[aria-pressed="true"], .favourite-button[aria-pressed="true"] { background: #154284; color: white; border-color: #154284; }
+.favourite-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; margin-top: 12px; max-width: 100%; }
+.favourite-button span { font-size: 19px; }
+.favourite-toolbar p, .favourite-empty { color: #456477; font-size: 13px; line-height: 1.7; margin: 10px 0 0; }
+.favourite-empty { padding: 20px; border: 1px dashed #b5d5e6; border-radius: 10px; background: #f4faff; }
+.favourite-filter button:focus-visible, .favourite-button:focus-visible { outline: 3px solid #008dc9; outline-offset: 3px; }

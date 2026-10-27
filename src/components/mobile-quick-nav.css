@@ -1,0 +1,10 @@
+.mobile-quick-nav { display: none; }
+@media (max-width: 700px) {
+  .mobile-quick-nav { display: block; padding: 14px 16px 16px; border-bottom: 1px solid var(--line); background: #edf6fc; }
+  .mobile-quick-label { display: block; margin-bottom: 8px; color: #456477; font: 11px 'DM Mono', monospace; letter-spacing: .04em; }
+  .mobile-quick-links { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }
+  .mobile-quick-links a, .mobile-quick-links button { display: flex; align-items: center; justify-content: center; min-width: 0; min-height: 46px; padding: 8px 4px; border: 1px solid #aacbdc; border-radius: 6px; background: white; color: #123047; font-size: 13px; font-weight: 700; text-align: center; line-height: 1.4; }
+  .mobile-quick-links a:hover, .mobile-quick-links button:hover { background: #dff1fb; }
+}
+@media (max-width: 360px) { .mobile-quick-links { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+

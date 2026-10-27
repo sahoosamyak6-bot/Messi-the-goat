@@ -198,6 +198,7 @@ export const GlobalSearchOverlay: React.FC<GlobalSearchOverlayProps> = ({
     { id: 'trophy', label: 'Trophies & Honors', icon: <Trophy className="w-3.5 h-3.5 text-[#154284]" /> },
     { id: 'milestone', label: 'Milestones & Records', icon: <Sparkles className="w-3.5 h-3.5 text-emerald-700" /> },
     { id: 'biography', label: 'Biography', icon: <BookOpen className="w-3.5 h-3.5 text-indigo-700" /> },
+    { id: 'section', label: 'Sections', icon: <BookOpen className="w-3.5 h-3.5 text-sky-700" /> },
     { id: 'game', label: 'Arcade', icon: <Gamepad2 className="w-3.5 h-3.5 text-sky-700" /> },
     { id: 'goal', label: 'Iconic Goals', icon: <Target className="w-3.5 h-3.5 text-rose-700" /> },
   ];
@@ -427,6 +428,7 @@ export const GlobalSearchOverlay: React.FC<GlobalSearchOverlayProps> = ({
                     return 'bg-sky-400/10 text-sky-800 border-sky-400/30';
                   case 'biography':
                     return 'bg-indigo-400/10 text-indigo-800 border-indigo-400/30';
+                  case 'section':
                   case 'game':
                     return 'bg-sky-50 text-sky-800 border-sky-200';
                   case 'goal':
@@ -444,6 +446,8 @@ export const GlobalSearchOverlay: React.FC<GlobalSearchOverlayProps> = ({
                     return <Calendar className="w-3.5 h-3.5 text-sky-700" />;
                   case 'biography':
                     return <BookOpen className="w-3.5 h-3.5 text-indigo-700" />;
+                  case 'section':
+                    return <BookOpen className="w-3.5 h-3.5 text-sky-700" />;
                   case 'game':
                     return <Gamepad2 className="w-3.5 h-3.5 text-sky-700" />;
                   case 'goal':
