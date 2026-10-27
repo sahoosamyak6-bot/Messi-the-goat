@@ -9,7 +9,7 @@ import {
   IconicMoment,
 } from '../data/messi-data';
 
-export type SearchCategory = 'year' | 'trophy' | 'milestone' | 'biography' | 'goal' | 'game';
+export type SearchCategory = 'year' | 'trophy' | 'milestone' | 'biography' | 'goal' | 'game' | 'section';
 
 export interface SearchAction {
   type: 'section' | 'moment' | 'season' | 'trophy' | 'chapter';
@@ -305,6 +305,41 @@ export function buildSearchIndex(): SearchIndexItem[] {
     tags: ['games', 'arcade', 'play', 'penalty shootout', 'quiz', 'trivia', 'guess the era', 'reaction challenge', 'trophy memory match', 'memory pairs', 'career timeline ordering', 'chronological order'],
     action: { type: 'section', sectionId: 'games' },
   });
+
+  // Direct destinations complement (rather than replace) historical archive results.
+  const sections = [
+    ['hero', 'Home', 'Introduction to the Messi legacy archive', 'home welcome start'],
+    ['news', 'Latest coverage', 'Publisher-linked Messi news and headlines', 'news latest coverage guardian'],
+    ['achievement-timeline', 'Crown achievements', 'Major career records and achievements', 'achievements records milestones crown'],
+    ['career-timeline', 'Career timeline', 'Explore career years, milestones and saved moments', 'timeline career seasons favourites favorites saved'],
+    ['biography', 'Biography', 'The life and story of Lionel Messi', 'biography story life rosario'],
+    ['statistics', 'Career statistics', 'Search season goals, assists and appearances', 'statistics stats goals assists seasons'],
+    ['gallery', 'Photo gallery & iconic moments', 'Browse archive photographs, moments and saved photos', 'photos gallery pictures images favourites favorites saved'],
+    ['lab', 'Interactive lab', 'Explore illustrated playbooks with playback controls', 'lab interactive tactics playbooks'],
+    ['pitch-visualizer', 'Original goal simulator', 'Open the original tactical pitch visualizer', 'simulator original goal pitch visualizer'],
+    ['games', 'Messi arcade', 'Six browser games and a daily challenge', 'games arcade play daily challenge'],
+    ['trophies', 'Trophy cabinet', 'Explore honours, silverware and awards', 'trophies honours honors silverware awards cabinet'],
+    ['trivia-quotes', 'Quotes, quiz & local polls', 'Original difficulty quiz, football quotes and the local goal vote', 'quotes quiz trivia polls vote fan challenge'],
+  ];
+  sections.forEach(([sectionId, title, description, keywords]) => items.push({
+    id: `section-${sectionId}`, category: 'section', categoryLabel: 'Archive Section', title,
+    subtitle: 'Jump to this section', description, badge: 'EXPLORE', tags: keywords.split(' '),
+    action: { type: 'section', sectionId },
+  }));
+  const games = [
+    ['penalty-game', 'Penalty shootout', 'Choose a direction in a five-shot round against a random keeper.', 'penalty shootout football goals shots'],
+    ['arcade-trivia-game', 'Messi trivia', 'Answer eight source-linked historical questions.', 'trivia quiz questions knowledge'],
+    ['era-game', 'Guess the era', 'Identify the club, country or career chapter from a clue.', 'guess era clues club country'],
+    ['reaction-game', 'Reaction challenge', 'Wait for the signal, then tap or use the keyboard.', 'reaction challenge speed timing reflexes'],
+    ['memory-game', 'Trophy memory match', 'Reveal cards and find matching trophy pairs.', 'trophy memory match matching pairs cards'],
+    ['timeline-game', 'Career timeline challenge', 'Arrange career moments in chronological order using Up and Down.', 'career timeline ordering chronological order'],
+    ['daily-challenge', 'Daily challenge', 'A sourced question selected for the date on your device.', 'daily challenge today question'],
+  ];
+  games.forEach(([focusId, title, description, keywords]) => items.push({
+    id: `game-${focusId}`, category: 'game', categoryLabel: 'Browser Game', title,
+    subtitle: 'Play in the Messi arcade', description, badge: 'PLAY', tags: keywords.split(' '),
+    action: { type: 'section', sectionId: 'games', payload: { focusId } },
+  }));
 
   return items;
 }
