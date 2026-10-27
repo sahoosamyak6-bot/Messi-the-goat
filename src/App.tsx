@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Navbar } from './components/Navbar';
+import { MobileQuickNav } from './components/MobileQuickNav';
 import { Hero } from './components/Hero';
 import { AchievementTimeline } from './components/AchievementTimeline';
 import { CareerTimeline } from './components/CareerTimeline';
@@ -157,6 +158,15 @@ export default function App() {
       handleNavigate('biography');
     } else {
       handleNavigate(action.sectionId);
+      if (action.payload?.focusId) {
+        requestAnimationFrame(() => {
+          const target = document.getElementById(action.payload.focusId);
+          if (!target) return;
+          target.tabIndex = -1;
+          target.focus({ preventScroll: true });
+          target.scrollIntoView({ behavior: 'instant', block: 'start' });
+        });
+      }
     }
   };
 
@@ -174,6 +184,7 @@ export default function App() {
       />
 
       <main id="main-content" tabIndex={-1} className="archive-content flex-1">
+        <MobileQuickNav onNavigate={handleNavigate} onOpenSearch={() => setIsSearchOpen(true)} />
         <Hero
           onNavigate={handleNavigate}
           onOpenSearch={() => setIsSearchOpen(true)}
