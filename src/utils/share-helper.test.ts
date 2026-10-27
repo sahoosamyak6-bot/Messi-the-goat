@@ -32,12 +32,12 @@ test('getSectionShareMetadata safely falls back to hero for unknown section IDs'
   assert.strictEqual(fallbackUnknown.previewTitle, SHAREABLE_SECTIONS.hero.previewTitle);
 });
 
-test('getAllShareableSections returns all 11 sections in precise visual order', () => {
+test('getAllShareableSections returns all 12 sections in precise visual order', () => {
   const all = getAllShareableSections();
-  assert.strictEqual(all.length, 11);
+  assert.strictEqual(all.length, 12);
   assert.deepEqual(SECTION_ORDER, [
     'hero', 'news', 'achievement-timeline', 'career-timeline', 'biography',
-    'statistics', 'gallery', 'lab', 'pitch-visualizer', 'trophies', 'trivia-quotes',
+    'statistics', 'gallery', 'lab', 'pitch-visualizer', 'games', 'trophies', 'trivia-quotes',
   ]);
   assert.deepStrictEqual(
     all.map((s) => s.sectionId),
@@ -320,4 +320,13 @@ test('a late native copy result is invalidated after the dialog request is abort
 test('browser deep links retain the current deployment path', t => {
   clipboardHarness(t);
   assert.equal(buildSectionDirectUrl('lab'), 'https://messi.example.com/archive/#lab');
+});
+
+test('arcade sharing retains its bookmark and states that records are local', () => {
+  assert.equal(buildSectionDirectUrl('games'), 'https://messi-the-goat.vercel.app/#games');
+  assert.match(getSectionShareMetadata('games').description, /this browser/);
+  assert.equal(getSectionShareMetadata('games').badge, 'Six Browser Mini-Games');
+  assert.match(getSectionShareMetadata('games').highlightStat, /Trophy Memory · Career Timeline/);
+  assert.equal(SECTION_ORDER.indexOf('games'), SECTION_ORDER.indexOf('pitch-visualizer') + 1);
+  assert.equal(SECTION_ORDER.indexOf('trophies'), SECTION_ORDER.indexOf('games') + 1);
 });

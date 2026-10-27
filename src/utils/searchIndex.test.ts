@@ -99,3 +99,13 @@ test('splitTextForHighlight splits matching tokens correctly', () => {
   const reconstructed = segments.map((s) => s.text).join('');
   assert.equal(reconstructed, text);
 });
+
+test('arcade game names resolve to the games section without replacing historical results', () => {
+  for (const query of ['arcade', 'penalty shootout', 'guess the era', 'reaction challenge', 'trivia', 'trophy memory', 'career timeline ordering', 'chronological order']) {
+    const games = searchArchive(query, 'game');
+    assert.equal(games.length, 1, query);
+    assert.equal(games[0].item.action.type, 'section');
+    assert.equal(games[0].item.action.sectionId, 'games');
+  }
+  assert.ok(searchArchive('2022 World Cup', 'trophy').length > 0);
+});

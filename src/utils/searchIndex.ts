@@ -9,7 +9,7 @@ import {
   IconicMoment,
 } from '../data/messi-data';
 
-export type SearchCategory = 'year' | 'trophy' | 'milestone' | 'biography' | 'goal';
+export type SearchCategory = 'year' | 'trophy' | 'milestone' | 'biography' | 'goal' | 'game';
 
 export interface SearchAction {
   type: 'section' | 'moment' | 'season' | 'trophy' | 'chapter';
@@ -292,6 +292,18 @@ export function buildSearchIndex(): SearchIndexItem[] {
         payload: { goalId: goal.id },
       },
     });
+  });
+
+  items.push({
+    id: 'games-arcade',
+    category: 'game',
+    categoryLabel: 'Browser Games',
+    title: 'Messi Arcade',
+    subtitle: 'Six mini-games · Play in your browser',
+    description: 'Penalty shootout, eight-question Messi trivia, Guess the Era clues, a reaction challenge, trophy memory matching, and career timeline ordering. Personal records stay in this browser.',
+    badge: 'PLAY',
+    tags: ['games', 'arcade', 'play', 'penalty shootout', 'quiz', 'trivia', 'guess the era', 'reaction challenge', 'trophy memory match', 'memory pairs', 'career timeline ordering', 'chronological order'],
+    action: { type: 'section', sectionId: 'games' },
   });
 
   return items;
