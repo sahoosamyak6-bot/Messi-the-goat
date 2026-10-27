@@ -6,7 +6,7 @@ import { soundFx } from '../utils/audio';
 interface NavbarProps { activeSection: string; onNavigate: (id: string) => void; onOpenSearch: () => void; onOpenShare: () => void; }
 const navigation = [
   ['Coverage', 'news'], ['Biography', 'biography'], ['Timeline', 'career-timeline'], ['Statistics', 'statistics'],
-  ['In pictures', 'gallery'], ['The lab', 'lab'], ['Honours', 'trophies'],
+  ['In pictures', 'gallery'], ['The lab', 'lab'], ['Arcade', 'games'], ['Honours', 'trophies'],
 ] as const;
 
 export function Navbar({ activeSection, onNavigate, onOpenSearch, onOpenShare }: NavbarProps) {
@@ -27,7 +27,7 @@ export function Navbar({ activeSection, onNavigate, onOpenSearch, onOpenShare }:
     navRef.current?.querySelector<HTMLAnchorElement>('a')?.focus();
     const escape = (event: KeyboardEvent) => { if (event.key === 'Escape') { event.preventDefault(); setMenuOpen(false); toggleRef.current?.focus(); } };
     const outside = (event: PointerEvent) => { if (event.target instanceof Node && !headerRef.current?.contains(event.target)) setMenuOpen(false); };
-    const desktop = window.matchMedia('(min-width: 1101px)');
+    const desktop = window.matchMedia('(min-width: 1241px)');
     const closeOnDesktop = () => { if (desktop.matches) setMenuOpen(false); };
     document.addEventListener('keydown', escape); document.addEventListener('pointerdown', outside); desktop.addEventListener('change', closeOnDesktop);
     return () => { document.removeEventListener('keydown', escape); document.removeEventListener('pointerdown', outside); desktop.removeEventListener('change', closeOnDesktop); };

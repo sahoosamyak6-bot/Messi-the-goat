@@ -1,0 +1,7 @@
+.arcade-share-result { margin-top: 20px; padding-top: 16px; border-top: 1px solid #d9e7ef; min-width: 0; }
+.arcade-share-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.arcade-share-result .arcade-share-actions button { min-height: 46px; }
+.arcade-share-result .arcade-share-status { font-size: 13px; line-height: 1.6; color: #345d72; margin: 10px 0; }
+.arcade-share-result label { display: block; font-size: 13px; line-height: 1.6; margin-bottom: 8px; }
+.arcade-share-result textarea { display: block; width: 100%; max-width: 100%; min-height: 150px; resize: vertical; padding: 12px; border: 1px solid #9cbdcf; border-radius: 8px; background: #fff; color: #123047; font: 16px/1.6 'Manrope', sans-serif; overflow-wrap: anywhere; }
+.arcade-share-result textarea:focus-visible { outline: 3px solid #0076aa; outline-offset: 3px; }

@@ -99,3 +99,40 @@ test('splitTextForHighlight splits matching tokens correctly', () => {
   const reconstructed = segments.map((s) => s.text).join('');
   assert.equal(reconstructed, text);
 });
+
+test('arcade game names resolve to the games section without replacing historical results', () => {
+  for (const query of ['arcade', 'penalty shootout', 'guess the era', 'reaction challenge', 'trivia', 'trophy memory', 'career timeline ordering', 'chronological order']) {
+    const games = searchArchive(query, 'game');
+    assert.ok(games.length >= 1, query);
+    assert.equal(games[0].item.action.type, 'section');
+    assert.equal(games[0].item.action.sectionId, 'games');
+  }
+  assert.ok(searchArchive('2022 World Cup', 'trophy').length > 0);
+});
+
+
+test('individual games and daily challenge have distinct searchable destinations', () => {
+  const destinations = {
+    'Penalty shootout': 'penalty-game', 'Messi trivia': 'arcade-trivia-game',
+    'Guess the era': 'era-game', 'Reaction challenge': 'reaction-game',
+    'Trophy memory match': 'memory-game', 'Career timeline challenge': 'timeline-game',
+    'Daily challenge': 'daily-challenge',
+  };
+  for (const [query, focusId] of Object.entries(destinations)) {
+    const result = searchArchive(query, 'game')[0].item;
+    assert.equal(result.title, query);
+    assert.equal(result.action.sectionId, 'games');
+    assert.equal(result.action.payload.focusId, focusId);
+  }
+});
+
+test('section search exposes every archive section without losing historic categories', () => {
+  const sections = searchArchive('', 'section');
+  const ids = sections.map(result => result.item.action.sectionId);
+  assert.deepEqual(ids, ['hero', 'news', 'achievement-timeline', 'career-timeline', 'biography', 'statistics', 'gallery', 'lab', 'pitch-visualizer', 'games', 'trophies', 'trivia-quotes']);
+  assert.equal(searchArchive('Latest coverage', 'section')[0].item.action.sectionId, 'news');
+  assert.equal(searchArchive('saved photos', 'section')[0].item.action.sectionId, 'gallery');
+  const all = buildSearchIndex();
+  assert.equal(new Set(all.map(item => item.id)).size, all.length);
+  assert.ok(searchArchive('World Cup', 'trophy').length > 0);
+});

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Navbar } from './components/Navbar';
+import { MobileQuickNav } from './components/MobileQuickNav';
 import { Hero } from './components/Hero';
 import { AchievementTimeline } from './components/AchievementTimeline';
 import { CareerTimeline } from './components/CareerTimeline';
@@ -14,6 +15,7 @@ import { MomentModal } from './components/MomentModal';
 import { GlobalSearchOverlay } from './components/GlobalSearchOverlay';
 import { IconicMoment } from './data/messi-data';
 import { SearchIndexItem } from './utils/searchIndex';
+import { MessiArcade } from './components/MessiArcade';
 import { LegacyLab } from './components/LegacyLab';
 import { LatestCoverage } from './components/LatestCoverage';
 import { ShareModal } from './components/ShareModal';
@@ -156,6 +158,15 @@ export default function App() {
       handleNavigate('biography');
     } else {
       handleNavigate(action.sectionId);
+      if (action.payload?.focusId) {
+        requestAnimationFrame(() => {
+          const target = document.getElementById(action.payload.focusId);
+          if (!target) return;
+          target.tabIndex = -1;
+          target.focus({ preventScroll: true });
+          target.scrollIntoView({ behavior: 'instant', block: 'start' });
+        });
+      }
     }
   };
 
@@ -173,6 +184,7 @@ export default function App() {
       />
 
       <main id="main-content" tabIndex={-1} className="archive-content flex-1">
+        <MobileQuickNav onNavigate={handleNavigate} onOpenSearch={() => setIsSearchOpen(true)} />
         <Hero
           onNavigate={handleNavigate}
           onOpenSearch={() => setIsSearchOpen(true)}
@@ -201,6 +213,7 @@ export default function App() {
           <summary>Keep exploring: the original goal simulator <span>More tactics, replays and shot controls</span></summary>
           <PitchVisualizer active={originalLabOpen} onShareSection={() => handleOpenShare('pitch-visualizer')} />
         </details>
+        <MessiArcade />
         <TrophyCabinet externalTrophyId={selectedTrophyId} externalRequestKey={requestKeys.trophy} />
         <QuotesAndTrivia />
       </main>

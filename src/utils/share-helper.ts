@@ -95,6 +95,15 @@ export const SHAREABLE_SECTIONS: Record<string, SectionShareMetadata> = {
     highlightStat: 'Illustrative Trajectories & Strike Geometry',
     hashtags: ['GoalLab', 'FootballTactics', 'PitchVisualizer', 'MessiGoals'],
   },
+  games: {
+    sectionId: 'games',
+    sectionLabel: 'Messi Arcade',
+    previewTitle: 'Your Turn, Number Ten | Messi Arcade',
+    badge: 'Six Browser Mini-Games',
+    description: 'Take a five-shot penalty round, test your Messi trivia, guess the era, challenge your reaction time, match trophy pairs, and order career milestones. Personal records stay in this browser, not on a public leaderboard.',
+    highlightStat: 'Penalties · Trivia · Eras · Reactions · Trophy Memory · Career Timeline',
+    hashtags: ['MessiArcade', 'FootballGames', 'LionelMessi'],
+  },
   trophies: {
     sectionId: 'trophies',
     sectionLabel: 'The Golden Trophy Cabinet',
@@ -128,6 +137,7 @@ export const SECTION_ORDER: string[] = [
   'gallery',
   'lab',
   'pitch-visualizer',
+  'games',
   'trophies',
   'trivia-quotes',
 ];
